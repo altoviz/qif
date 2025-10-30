@@ -1,0 +1,38 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "test",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"--verbosity",
+				"normal"
+			],
+			"group": "test"
+		},
+		{
+			"label": "test-detailed",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"test",
+				"--logger",
+				"console;verbosity=detailed"
+			],
+			"group": "test"
+		},
+		{
+			"label": "build-check",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"--verbosity",
+				"normal"
+			],
+			"group": "build"
+		}
+	]
+}

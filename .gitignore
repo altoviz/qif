@@ -1,0 +1,8 @@
+;.vscode/
+**/*.log
+node_modules/
+dist/
+.env
+.DS_Store
+**/obj/
+**/bin/

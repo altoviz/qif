@@ -1,0 +1,636 @@
+using System.Globalization;
+using System.Text;
+using Altoviz.Qif.Models;
+
+namespace Altoviz.Qif;
+
+/// <summary>
+/// QIF file parser implementation with async/await support
+/// </summary>
+public class QifParser : IQifParser
+{
+    private const string EndOfEntry = "^";
+    
+    /// <summary>
+    /// Parses a QIF file from the specified file path asynchronously
+    /// </summary>
+    /// <param name="filePath">Path to the QIF file</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Parsed QIF document</returns>
+    /// <exception cref="ArgumentNullException">Thrown when filePath is null or empty</exception>
+    /// <exception cref="FileNotFoundException">Thrown when the file does not exist</exception>
+    public async Task<QifDocument> ParseFileAsync(string filePath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new ArgumentNullException(nameof(filePath));
+            
+        if (!File.Exists(filePath))
+            throw new FileNotFoundException($"QIF file not found: {filePath}");
+            
+        using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        return await ParseStreamAsync(fileStream, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Parses QIF content from a stream asynchronously
+    /// </summary>
+    /// <param name="stream">Stream containing QIF data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Parsed QIF document</returns>
+    /// <exception cref="ArgumentNullException">Thrown when stream is null</exception>
+    public async Task<QifDocument> ParseStreamAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        if (stream == null)
+            throw new ArgumentNullException(nameof(stream));
+            
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        var content = await reader.ReadToEndAsync(cancellationToken);
+        return ParseString(content);
+    }
+    
+    /// <summary>
+    /// Parses QIF content from a string
+    /// </summary>
+    /// <param name="content">QIF content as string</param>
+    /// <returns>Parsed QIF document</returns>
+    /// <exception cref="ArgumentNullException">Thrown when content is null</exception>
+    public QifDocument ParseString(string content)
+    {
+        if (content == null)
+            throw new ArgumentNullException(nameof(content));
+            
+        var document = new QifDocument();
+        var lines = content.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        
+        if (lines.Length == 0)
+            return document;
+            
+        var currentIndex = 0;
+        
+        // Skip comment lines and find the first !Type: header
+        while (currentIndex < lines.Length && 
+               (lines[currentIndex].StartsWith("#") || 
+                lines[currentIndex].StartsWith("###") ||
+                string.IsNullOrWhiteSpace(lines[currentIndex])))
+        {
+            currentIndex++;
+        }
+        
+        // Parse header
+        if (currentIndex < lines.Length && lines[currentIndex].StartsWith("!Type:"))
+        {
+            document.AccountType = ParseAccountType(lines[currentIndex]);
+            currentIndex++;
+        }
+        
+        // Check for AllXfr option
+        if (currentIndex < lines.Length && lines[currentIndex] == "!Option:AllXfr")
+        {
+            document.ImportAllTransfers = true;
+            currentIndex++;
+        }
+        
+        // Parse entries
+        while (currentIndex < lines.Length)
+        {
+            // Skip comment lines
+            if (lines[currentIndex].StartsWith("#") || lines[currentIndex].StartsWith("###"))
+            {
+                currentIndex++;
+                continue;
+            }
+            
+            var entry = ExtractEntry(lines, ref currentIndex);
+            if (entry.Count > 0)
+            {
+                ParseEntry(document, entry);
+            }
+        }
+        
+        return document;
+    }
+    
+    private static QifAccountType ParseAccountType(string headerLine)
+    {
+        var type = headerLine.Substring(6); // Remove "!Type:"
+        return type switch
+        {
+            "Bank" => QifAccountType.Bank,
+            "Cash" => QifAccountType.Cash,
+            "CCard" => QifAccountType.CreditCard,
+            "Invst" => QifAccountType.Investment,
+            "Oth A" => QifAccountType.OtherAsset,
+            "Oth L" => QifAccountType.OtherLiability,
+            "Cat" => QifAccountType.Category,
+            "Class" => QifAccountType.Class,
+            "Memorized" => QifAccountType.Memorized,
+            _ => QifAccountType.Bank
+        };
+    }
+    
+    private static List<string> ExtractEntry(string[] lines, ref int currentIndex)
+    {
+        var entry = new List<string>();
+        
+        while (currentIndex < lines.Length)
+        {
+            var line = lines[currentIndex++];
+            
+            // Skip comment lines
+            if (line.StartsWith("#") || line.StartsWith("###"))
+                continue;
+            
+            if (line == EndOfEntry)
+                break;
+                
+            if (line.StartsWith("!Account"))
+            {
+                // Handle account header
+                entry.Add(line);
+                continue;
+            }
+                
+            entry.Add(line);
+        }
+        
+        return entry;
+    }
+    
+    private static void ParseEntry(QifDocument document, List<string> entry)
+    {
+        if (entry.Count == 0) return;
+        
+        // Check if this is an account header
+        if (entry[0].StartsWith("!Account"))
+        {
+            var account = ParseAccount(entry);
+            if (account != null)
+                document.Accounts.Add(account);
+            return;
+        }
+        
+        switch (document.AccountType)
+        {
+            case QifAccountType.Investment:
+                var investmentTransaction = ParseInvestmentTransaction(entry);
+                if (investmentTransaction != null)
+                    document.InvestmentTransactions.Add(investmentTransaction);
+                break;
+                
+            case QifAccountType.Memorized:
+                var memorizedTransaction = ParseMemorizedTransaction(entry);
+                if (memorizedTransaction != null)
+                    document.MemorizedTransactions.Add(memorizedTransaction);
+                break;
+                
+            case QifAccountType.Category:
+                var category = ParseCategory(entry);
+                if (category != null)
+                    document.Categories.Add(category);
+                break;
+                
+            case QifAccountType.Class:
+                var qifClass = ParseClass(entry);
+                if (qifClass != null)
+                    document.Classes.Add(qifClass);
+                break;
+                
+            default:
+                var transaction = ParseTransaction(entry);
+                if (transaction != null)
+                    document.Transactions.Add(transaction);
+                break;
+        }
+    }
+    
+    private static QifTransaction? ParseTransaction(List<string> entry)
+    {
+        var transaction = new QifTransaction();
+        var hasData = false;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'D':
+                    transaction.Date = ParseDate(value);
+                    hasData = true;
+                    break;
+                case 'T':
+                    transaction.Amount = ParseDecimal(value);
+                    hasData = true;
+                    break;
+                case 'C':
+                    transaction.ClearedStatus = ParseClearedStatus(value);
+                    break;
+                case 'N':
+                    transaction.Number = value;
+                    break;
+                case 'P':
+                    transaction.Payee = value;
+                    break;
+                case 'M':
+                    transaction.Memo = value;
+                    break;
+                case 'A':
+                    transaction.Address.Add(value);
+                    break;
+                case 'L':
+                    transaction.Category = value;
+                    break;
+                case 'S':
+                    // Start of split - we'll collect these separately
+                    break;
+                case 'E':
+                case '$':
+                    // These are handled with splits
+                    break;
+            }
+        }
+        
+        // Parse splits
+        ParseSplits(entry, transaction.Splits);
+        
+        return hasData ? transaction : null;
+    }
+    
+    private static QifInvestmentTransaction? ParseInvestmentTransaction(List<string> entry)
+    {
+        var transaction = new QifInvestmentTransaction();
+        var hasData = false;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'D':
+                    transaction.Date = ParseDate(value);
+                    hasData = true;
+                    break;
+                case 'N':
+                    transaction.Action = value;
+                    break;
+                case 'Y':
+                    transaction.Security = value;
+                    break;
+                case 'I':
+                    transaction.Price = ParseDecimal(value);
+                    break;
+                case 'Q':
+                    transaction.Quantity = ParseDecimal(value);
+                    break;
+                case 'T':
+                    transaction.Amount = ParseDecimal(value);
+                    hasData = true;
+                    break;
+                case 'C':
+                    transaction.ClearedStatus = ParseClearedStatus(value);
+                    break;
+                case 'P':
+                    transaction.Payee = value;
+                    break;
+                case 'M':
+                    transaction.Memo = value;
+                    break;
+                case 'O':
+                    transaction.Commission = ParseDecimal(value);
+                    break;
+                case 'L':
+                    transaction.TransferAccount = value;
+                    break;
+                case '$':
+                    transaction.TransferAmount = ParseDecimal(value);
+                    break;
+            }
+        }
+        
+        return hasData ? transaction : null;
+    }
+    
+    private static QifMemorizedTransaction? ParseMemorizedTransaction(List<string> entry)
+    {
+        var transaction = new QifMemorizedTransaction();
+        var hasData = false;
+        QifAmortization? amortization = null;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'T':
+                    transaction.Amount = ParseDecimal(value);
+                    hasData = true;
+                    break;
+                case 'C':
+                    transaction.ClearedStatus = ParseClearedStatus(value);
+                    break;
+                case 'P':
+                    transaction.Payee = value;
+                    break;
+                case 'M':
+                    transaction.Memo = value;
+                    break;
+                case 'A':
+                    transaction.Address.Add(value);
+                    break;
+                case 'L':
+                    transaction.Category = value;
+                    break;
+                case 'S':
+                case 'E':
+                case '$':
+                    // Handle splits
+                    break;
+                case 'K':
+                    if (line.Length >= 2)
+                    {
+                        transaction.TransactionType = line[1] switch
+                        {
+                            'C' => QifMemorizedTransactionType.Check,
+                            'D' => QifMemorizedTransactionType.Deposit,
+                            'P' => QifMemorizedTransactionType.Payment,
+                            'I' => QifMemorizedTransactionType.Investment,
+                            'E' => QifMemorizedTransactionType.ElectronicPayee,
+                            _ => QifMemorizedTransactionType.Check
+                        };
+                        hasData = true;
+                    }
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                    // Amortization fields
+                    amortization ??= new QifAmortization();
+                    ParseAmortizationField(amortization, indicator, value);
+                    break;
+            }
+        }
+        
+        if (amortization != null)
+            transaction.Amortization = amortization;
+            
+        // Parse splits
+        ParseSplits(entry, transaction.Splits);
+        
+        return hasData ? transaction : null;
+    }
+    
+    private static void ParseAmortizationField(QifAmortization amortization, char field, string value)
+    {
+        switch (field)
+        {
+            case '1':
+                amortization.FirstPaymentDate = ParseDate(value);
+                break;
+            case '2':
+                amortization.TotalYears = ParseInt(value);
+                break;
+            case '3':
+                amortization.PaymentsMade = ParseInt(value);
+                break;
+            case '4':
+                amortization.PeriodsPerYear = ParseInt(value);
+                break;
+            case '5':
+                amortization.InterestRate = ParseDecimal(value);
+                break;
+            case '6':
+                amortization.CurrentBalance = ParseDecimal(value);
+                break;
+            case '7':
+                amortization.OriginalAmount = ParseDecimal(value);
+                break;
+        }
+    }
+    
+    private static QifAccount? ParseAccount(List<string> entry)
+    {
+        var account = new QifAccount();
+        var hasData = false;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            if (line.StartsWith("!Account"))
+                continue;
+                
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'N':
+                    account.Name = value;
+                    hasData = true;
+                    break;
+                case 'T':
+                    account.Type = value;
+                    break;
+                case 'D':
+                    account.Description = value;
+                    break;
+                case 'L':
+                    account.CreditLimit = ParseDecimal(value);
+                    break;
+                case '/':
+                    account.StatementBalanceDate = ParseDate(value);
+                    break;
+                case '$':
+                    account.StatementBalance = ParseDecimal(value);
+                    break;
+            }
+        }
+        
+        return hasData ? account : null;
+    }
+    
+    private static QifCategory? ParseCategory(List<string> entry)
+    {
+        var category = new QifCategory();
+        var hasData = false;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'N':
+                    category.Name = value;
+                    hasData = true;
+                    break;
+                case 'D':
+                    category.Description = value;
+                    break;
+                case 'T':
+                    category.IsTaxRelated = true;
+                    break;
+                case 'I':
+                    category.IsIncomeCategory = true;
+                    break;
+                case 'E':
+                    category.IsIncomeCategory = false;
+                    break;
+                case 'B':
+                    category.BudgetAmount = ParseDecimal(value);
+                    break;
+                case 'R':
+                    category.TaxSchedule = value;
+                    break;
+            }
+        }
+        
+        return hasData ? category : null;
+    }
+    
+    private static QifClass? ParseClass(List<string> entry)
+    {
+        var qifClass = new QifClass();
+        var hasData = false;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'N':
+                    qifClass.Name = value;
+                    hasData = true;
+                    break;
+                case 'D':
+                    qifClass.Description = value;
+                    break;
+            }
+        }
+        
+        return hasData ? qifClass : null;
+    }
+    
+    private static void ParseSplits(List<string> entry, List<QifSplit> splits)
+    {
+        QifSplit? currentSplit = null;
+        
+        foreach (var line in entry)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            
+            var indicator = line[0];
+            var value = line.Length > 1 ? line[1..] : string.Empty;
+            
+            switch (indicator)
+            {
+                case 'S':
+                    // Start new split
+                    if (currentSplit != null)
+                        splits.Add(currentSplit);
+                    currentSplit = new QifSplit { Category = value };
+                    break;
+                case 'E':
+                    if (currentSplit != null)
+                        currentSplit.Memo = value;
+                    break;
+                case '$':
+                    if (currentSplit != null)
+                        currentSplit.Amount = ParseDecimal(value) ?? 0;
+                    break;
+            }
+        }
+        
+        // Add the last split
+        if (currentSplit != null)
+            splits.Add(currentSplit);
+    }
+    
+    private static DateTime? ParseDate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+            
+        // QIF dates can be in various formats: M/d/yy, M/d/yyyy, M/d/'yy
+        var cleanValue = value.Replace("'", "").Trim();
+        
+        var formats = new[]
+        {
+            "M/d/yy", "M/d/yyyy", "MM/dd/yy", "MM/dd/yyyy",
+            "M-d-yy", "M-d-yyyy", "MM-dd-yy", "MM-dd-yyyy",
+            "M.d.yy", "M.d.yyyy", "MM.dd.yy", "MM.dd.yyyy"
+        };
+        
+        foreach (var format in formats)
+        {
+            if (DateTime.TryParseExact(cleanValue, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+            {
+                // Handle 2-digit years
+                if (date.Year < 100)
+                    date = date.AddYears(2000);
+                else if (date.Year < 1950)
+                    date = date.AddYears(100);
+                    
+                return date;
+            }
+        }
+        
+        // Fallback to standard parsing
+        return DateTime.TryParse(cleanValue, out var fallbackDate) ? fallbackDate : null;
+    }
+    
+    private static decimal? ParseDecimal(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+            
+        // Remove common formatting characters
+        var cleanValue = value.Replace(",", "").Replace("$", "").Trim();
+        
+        return decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var result) ? result : null;
+    }
+    
+    private static int? ParseInt(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+            
+        return int.TryParse(value.Trim(), out var result) ? result : null;
+    }
+    
+    private static QifClearedStatus ParseClearedStatus(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return QifClearedStatus.None;
+            
+        return value.ToUpperInvariant() switch
+        {
+            "C" or "CLEARED" => QifClearedStatus.Cleared,
+            "R" or "RECONCILED" => QifClearedStatus.Reconciled,
+            "X" => QifClearedStatus.Cleared, // X is also used for cleared
+            _ => QifClearedStatus.None
+        };
+    }
+}
