@@ -24,11 +24,11 @@ Altoviz.Qif;
 var parser = new QifParser();
 
 // Parse from file
-var document = await parser.ParseFileAsync("transactions.qif");
+var document = await parser.ParseAsync("transactions.qif");
 
 // Parse from stream
 using var stream = File.OpenRead("transactions.qif");
-var document = await parser.ParseStreamAsync(stream);
+var document = await parser.ParseAsync(stream);
 
 // Parse from string
 var qifContent = "!Type:Bank\nD1/1/2023\nT100.00\nPTest Payee\n^";
@@ -39,7 +39,7 @@ var document = parser.ParseString(qifContent);
 
 ```csharp
 var parser = new QifParser();
-var document = await parser.ParseFileAsync("bank.qif");
+var document = await parser.ParseAsync("bank.qif");
 
 Console.WriteLine($"Account Type: {document.AccountType}");
 Console.WriteLine($"Total Items: {document.TotalItems}");
@@ -51,7 +51,7 @@ foreach (var transaction in document.Transactions)
     Console.WriteLine($"Amount: {transaction.Amount:C}");
     Console.WriteLine($"Payee: {transaction.Payee}");
     Console.WriteLine($"Category: {transaction.Category}");
-    
+
     // Process splits if any
     foreach (var split in transaction.Splits)
     {
@@ -72,7 +72,7 @@ foreach (var investment in document.InvestmentTransactions)
 ## Supported QIF Types
 
 - **!Type:Bank** - Bank account transactions
-- **!Type:Cash** - Cash account transactions  
+- **!Type:Cash** - Cash account transactions
 - **!Type:CCard** - Credit card account transactions
 - **!Type:Invst** - Investment account transactions
 - **!Type:Oth A** - Asset account transactions
@@ -85,7 +85,9 @@ foreach (var investment in document.InvestmentTransactions)
 ## Models
 
 ### QifDocument
+
 The main container that holds all parsed data:
+
 - `AccountType` - The type of QIF data
 - `Transactions` - Regular transactions
 - `InvestmentTransactions` - Investment transactions
@@ -95,7 +97,9 @@ The main container that holds all parsed data:
 - `Classes` - Classes
 
 ### QifTransaction
+
 Regular transaction model with fields:
+
 - `Date`, `Amount`, `Payee`, `Memo`, `Category`
 - `Number` (check/reference number)
 - `ClearedStatus` (None, Cleared, Reconciled)
@@ -103,7 +107,9 @@ Regular transaction model with fields:
 - `Splits` (split transactions)
 
 ### QifInvestmentTransaction
+
 Investment transaction with additional fields:
+
 - `Action`, `Security`, `Price`, `Quantity`
 - `Commission`, `TransferAccount`, `TransferAmount`
 
@@ -114,7 +120,7 @@ The library includes comprehensive error handling:
 ```csharp
 try
 {
-    var document = await parser.ParseFileAsync("file.qif");
+    var document = await parser.ParseAsync("file.qif");
 }
 catch (FileNotFoundException)
 {

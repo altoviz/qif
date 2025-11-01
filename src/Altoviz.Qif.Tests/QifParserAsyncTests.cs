@@ -1,6 +1,6 @@
+using System.Text;
 using Altoviz.Qif;
 using Altoviz.Qif.Models;
-using System.Text;
 using Xunit;
 
 namespace Altoviz.Qif.Tests;
@@ -10,7 +10,7 @@ public class QifParserAsyncTests
     private readonly QifParser _parser = new();
 
     [Fact]
-    public async Task ParseStreamAsync_WithValidStream_ParsesCorrectly()
+    public async Task ParseAsync_WithValidStream_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -21,17 +21,17 @@ public class QifParserAsyncTests
             LMortgage
             ^
             """;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(qifContent));
-        var result = await _parser.ParseStreamAsync(stream);
-        
+        var result = await _parser.ParseAsync(stream);
+
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Single(result.Transactions);
         Assert.Equal(-1000.00m, result.Transactions[0].Amount);
     }
 
     [Fact]
-    public async Task ParseFileAsync_WithValidTempFile_ParsesCorrectly()
+    public async Task ParseAsync_WithValidTempFile_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cash
@@ -41,13 +41,13 @@ public class QifParserAsyncTests
             LMisc
             ^
             """;
-        
+
         var tempFile = Path.GetTempFileName();
         try
         {
             await File.WriteAllTextAsync(tempFile, qifContent);
-            var result = await _parser.ParseFileAsync(tempFile);
-            
+            var result = await _parser.ParseAsync(tempFile);
+
             Assert.Equal(QifAccountType.Cash, result.AccountType);
             Assert.Single(result.Transactions);
             Assert.Equal(25.50m, result.Transactions[0].Amount);
@@ -61,7 +61,7 @@ public class QifParserAsyncTests
     }
 
     [Fact]
-    public async Task ParseStreamAsync_WithCancellation_ThrowsOperationCanceledException()
+    public async Task ParseAsync_WithCancellation_ThrowsOperationCanceledException()
     {
         var qifContent = """
             !Type:Bank
@@ -70,30 +70,30 @@ public class QifParserAsyncTests
             PTest
             ^
             """;
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(qifContent));
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => 
-            _parser.ParseStreamAsync(stream, cts.Token));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            _parser.ParseAsync(stream, cts.Token));
     }
 
     [Fact]
-    public async Task ParseFileAsync_WithCancellation_ThrowsOperationCanceledException()
+    public async Task ParseAsync_File_WithCancellation_ThrowsOperationCanceledException()
     {
         var qifContent = "!Type:Bank\nD6/1/94\nT100.00\nPTest\n^";
         var tempFile = Path.GetTempFileName();
-        
+
         try
         {
             await File.WriteAllTextAsync(tempFile, qifContent);
-            
+
             using var cts = new CancellationTokenSource();
             cts.Cancel();
-            
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => 
-                _parser.ParseFileAsync(tempFile, cts.Token));
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                _parser.ParseAsync(tempFile, cts.Token));
         }
         finally
         {
@@ -103,11 +103,11 @@ public class QifParserAsyncTests
     }
 
     [Fact]
-    public async Task ParseStreamAsync_WithLargeFile_HandlesCorrectly()
+    public async Task ParseAsync_Stream_WithLargeFile_HandlesCorrectly()
     {
         var sb = new StringBuilder();
         sb.AppendLine("!Type:Bank");
-        
+
         // Create 1000 transactions
         for (int i = 1; i <= 1000; i++)
         {
@@ -117,17 +117,17 @@ public class QifParserAsyncTests
             sb.AppendLine($"LCategory {i % 10}");
             sb.AppendLine("^");
         }
-        
+
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
-        var result = await _parser.ParseStreamAsync(stream);
-        
+        var result = await _parser.ParseAsync(stream);
+
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Equal(1000, result.Transactions.Count);
-        
+
         // Verify first and last transactions
         Assert.Equal(10.00m, result.Transactions[0].Amount);
         Assert.Equal("Payee 1", result.Transactions[0].Payee);
-        
+
         Assert.Equal(10000.00m, result.Transactions[999].Amount);
         Assert.Equal("Payee 1000", result.Transactions[999].Payee);
     }

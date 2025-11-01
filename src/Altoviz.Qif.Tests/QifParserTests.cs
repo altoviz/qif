@@ -18,27 +18,27 @@ public class QifParserTests
     public void ParseString_WithEmptyContent_ReturnsEmptyDocument()
     {
         var result = _parser.ParseString(string.Empty);
-        
+
         Assert.NotNull(result);
         Assert.Equal(0, result.TotalItems);
     }
 
     [Fact]
-    public async Task ParseFileAsync_WithNullFilePath_ThrowsArgumentNullException()
+    public async Task ParseAsync_WithNullFilePath_ThrowsArgumentNullException()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseFileAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseAsync((Stream)null!));
     }
 
     [Fact]
-    public async Task ParseFileAsync_WithNonExistentFile_ThrowsFileNotFoundException()
+    public async Task ParseAsync_WithNonExistentFile_ThrowsFileNotFoundException()
     {
-        await Assert.ThrowsAsync<FileNotFoundException>(() => _parser.ParseFileAsync("nonexistent.qif"));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _parser.ParseAsync("nonexistent.qif"));
     }
 
     [Fact]
-    public async Task ParseStreamAsync_WithNullStream_ThrowsArgumentNullException()
+    public async Task ParseAsync_WithNullStream_ThrowsArgumentNullException()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseStreamAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseAsync((Stream)null!));
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class QifParserTests
     {
         var qifContent = "!Type:Bank";
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Equal(0, result.TotalItems);
     }
@@ -58,9 +58,9 @@ public class QifParserTests
             !Type:Bank
             !Option:AllXfr
             """;
-        
+
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.True(result.ImportAllTransfers);
     }
@@ -77,12 +77,12 @@ public class QifParserTests
             LMortgage
             ^
             """;
-        
+
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Single(result.Transactions);
-        
+
         var transaction = result.Transactions[0];
         Assert.Equal(new DateTime(1994, 6, 1), transaction.Date);
         Assert.Equal(-1000.00m, transaction.Amount);
@@ -107,16 +107,16 @@ public class QifParserTests
             $-746.36
             ^
             """;
-        
+
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];
         Assert.Equal(2, transaction.Splits.Count);
-        
+
         Assert.Equal("[linda]", transaction.Splits[0].Category);
         Assert.Equal(-253.64m, transaction.Splits[0].Amount);
-        
+
         Assert.Equal("Mort Int", transaction.Splits[1].Category);
         Assert.Equal(-746.36m, transaction.Splits[1].Amount);
     }
@@ -132,9 +132,9 @@ public class QifParserTests
             PTest Payee
             ^
             """;
-        
+
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Single(result.Transactions);
         Assert.Equal(QifClearedStatus.Cleared, result.Transactions[0].ClearedStatus);
     }
@@ -157,9 +157,9 @@ public class QifParserTests
             A
             ^
             """;
-        
+
         var result = _parser.ParseString(qifContent);
-        
+
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];
         Assert.Equal("Film", transaction.Memo);

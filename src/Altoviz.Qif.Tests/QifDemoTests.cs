@@ -21,14 +21,14 @@ public class QifDemoTests
     {
         // Arrange
         var sampleFilePath = Path.Combine(_filesDirectory, "sample.qif");
-        
+
         // Act
-        var document = await _parser.ParseFileAsync(sampleFilePath);
-        
+        var document = await _parser.ParseAsync(sampleFilePath);
+
         // Assert and Display Results
         Assert.NotNull(document);
         Assert.True(document.TotalItems > 0);
-        
+
         _output.WriteLine("=== QIF Demo - Sample File Analysis ===");
         _output.WriteLine($"Account Type: {document.AccountType}");
         _output.WriteLine($"Total Transactions: {document.Transactions.Count}");
@@ -40,7 +40,7 @@ public class QifDemoTests
         var totalIncome = transactions.Where(t => t.Amount > 0).Sum(t => t.Amount ?? 0);
         var totalExpenses = transactions.Where(t => t.Amount < 0).Sum(t => t.Amount ?? 0);
         var netAmount = transactions.Sum(t => t.Amount ?? 0);
-        
+
         _output.WriteLine("=== Financial Summary ===");
         _output.WriteLine($"Total Income: {totalIncome:C}");
         _output.WriteLine($"Total Expenses: {Math.Abs(totalExpenses):C}");
@@ -164,7 +164,7 @@ public class QifDemoTests
 
         // Validation checks
         _output.WriteLine("=== Validation Results ===");
-        
+
         // Check for transactions without dates
         var undatedTransactions = transactions.Where(t => !t.Date.HasValue).Count();
         if (undatedTransactions > 0)
@@ -199,7 +199,7 @@ public class QifDemoTests
         }
 
         _output.WriteLine("=== Demo Complete ===");
-        
+
         // Final assertions to ensure the test validates the parser
         Assert.True(document.Transactions.Count > 0, "Should have parsed transactions");
         Assert.Equal(QifAccountType.Bank, document.AccountType);

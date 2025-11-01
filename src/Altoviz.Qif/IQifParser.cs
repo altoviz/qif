@@ -13,16 +13,16 @@ public interface IQifParser
     /// <param name="filePath">Path to the QIF file</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Parsed QIF document</returns>
-    Task<QifDocument> ParseFileAsync(string filePath, CancellationToken cancellationToken = default);
-    
+    Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Parses QIF content from a stream asynchronously
     /// </summary>
     /// <param name="stream">Stream containing QIF data</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Parsed QIF document</returns>
-    Task<QifDocument> ParseStreamAsync(Stream stream, CancellationToken cancellationToken = default);
-    
+    Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Parses QIF content from a string
     /// </summary>

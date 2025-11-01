@@ -28,7 +28,7 @@ using QifLib.Models;
 var parser = new QifParser();
 
 // Parse a QIF file
-var document = await parser.ParseFileAsync("bank_transactions.qif");
+var document = await parser.ParseAsync("bank_transactions.qif");
 
 // Display basic information
 Console.WriteLine($"Account Type: {document.AccountType}");
@@ -68,7 +68,7 @@ using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
 try
 {
-    var document = await parser.ParseFileAsync("large_file.qif", cts.Token);
+    var document = await parser.ParseAsync("large_file.qif", cts.Token);
     Console.WriteLine("Parsing completed successfully");
 }
 catch (OperationCanceledException)
@@ -82,17 +82,17 @@ catch (OperationCanceledException)
 ```csharp
 // From file stream
 using var fileStream = File.OpenRead("transactions.qif");
-var document = await parser.ParseStreamAsync(fileStream);
+var document = await parser.ParseAsync(fileStream);
 
 // From memory stream
 var bytes = Encoding.UTF8.GetBytes(qifContent);
 using var memoryStream = new MemoryStream(bytes);
-var document2 = await parser.ParseStreamAsync(memoryStream);
+var document2 = await parser.ParseAsync(memoryStream);
 
 // From network stream
 using var httpClient = new HttpClient();
 using var httpStream = await httpClient.GetStreamAsync("https://example.com/data.qif");
-var document3 = await parser.ParseStreamAsync(httpStream);
+var document3 = await parser.ParseAsync(httpStream);
 ```
 
 ## Error Handling
@@ -105,7 +105,7 @@ public async Task<QifDocument?> SafeParseFile(string filePath)
     try
     {
         var parser = new QifParser();
-        return await parser.ParseFileAsync(filePath);
+        return await parser.ParseAsync(filePath);
     }
     catch (FileNotFoundException ex)
     {
@@ -162,7 +162,7 @@ public void ValidateDocument(QifDocument document)
     {
         var splitTotal = transaction.Splits.Sum(s => s.Amount);
         var transactionAmount = transaction.Amount ?? 0;
-        
+
         if (Math.Abs(splitTotal - transactionAmount) > 0.01m)
         {
             Console.WriteLine($"Warning: Split amounts don't match transaction amount for transaction on {transaction.Date}");
@@ -247,16 +247,16 @@ public class TransactionAnalyzer
     public void AnalyzeTransactions(QifDocument document)
     {
         var transactions = document.Transactions;
-        
+
         // Basic statistics
         var totalTransactions = transactions.Count;
         var totalAmount = transactions.Sum(t => t.Amount ?? 0);
         var averageAmount = transactions.Where(t => t.Amount.HasValue).Average(t => t.Amount!.Value);
-        
+
         Console.WriteLine($"Total Transactions: {totalTransactions}");
         Console.WriteLine($"Total Amount: {totalAmount:C}");
         Console.WriteLine($"Average Amount: {averageAmount:C}");
-        
+
         // Date range
         var datedTransactions = transactions.Where(t => t.Date.HasValue).ToList();
         if (datedTransactions.Any())
@@ -265,7 +265,7 @@ public class TransactionAnalyzer
             var endDate = datedTransactions.Max(t => t.Date!.Value);
             Console.WriteLine($"Date Range: {startDate:d} to {endDate:d}");
         }
-        
+
         // Monthly breakdown
         var monthlyTotals = datedTransactions
             .GroupBy(t => new { t.Date!.Value.Year, t.Date!.Value.Month })
@@ -277,7 +277,7 @@ public class TransactionAnalyzer
             })
             .OrderBy(x => x.Month)
             .ToList();
-        
+
         Console.WriteLine("\nMonthly Breakdown:");
         foreach (var month in monthlyTotals)
         {
@@ -333,7 +333,7 @@ public void ProcessSplitTransactions(QifDocument document)
         Console.WriteLine($"\nTransaction on {transaction.Date:d} for {transaction.Amount:C}");
         Console.WriteLine($"Payee: {transaction.Payee}");
         Console.WriteLine("Splits:");
-        
+
         foreach (var split in transaction.Splits)
         {
             Console.WriteLine($"  {split.Category}: {split.Amount:C}");
@@ -342,7 +342,7 @@ public void ProcessSplitTransactions(QifDocument document)
                 Console.WriteLine($"    Memo: {split.Memo}");
             }
         }
-        
+
         // Verify split total
         var splitTotal = transaction.Splits.Sum(s => s.Amount);
         var difference = Math.Abs(splitTotal - (transaction.Amount ?? 0));
@@ -415,7 +415,7 @@ public void ProcessInvestmentTransactions(QifDocument document)
     }
 
     var investments = document.InvestmentTransactions;
-    
+
     Console.WriteLine($"Total Investment Transactions: {investments.Count}");
 
     // Group by security
@@ -427,18 +427,18 @@ public void ProcessInvestmentTransactions(QifDocument document)
     foreach (var group in securityGroups)
     {
         Console.WriteLine($"\nSecurity: {group.Key}");
-        
+
         var buys = group.Where(t => t.Action?.ToLower().Contains("buy") == true).ToList();
         var sells = group.Where(t => t.Action?.ToLower().Contains("sell") == true).ToList();
-        
+
         var totalShares = buys.Sum(t => t.Quantity ?? 0) - sells.Sum(t => t.Quantity ?? 0);
         var totalInvested = buys.Sum(t => (t.Quantity ?? 0) * (t.Price ?? 0));
         var totalCommissions = group.Sum(t => t.Commission ?? 0);
-        
+
         Console.WriteLine($"  Total Shares: {totalShares}");
         Console.WriteLine($"  Total Invested: {totalInvested:C}");
         Console.WriteLine($"  Total Commissions: {totalCommissions:C}");
-        
+
         if (totalShares > 0)
         {
             var averagePrice = totalInvested / totalShares;
@@ -475,7 +475,7 @@ public class InvestmentAnalyzer
             }
 
             var position = portfolio[transaction.Security];
-            
+
             switch (transaction.Action?.ToLower())
             {
                 case "buy" when transaction.Quantity.HasValue && transaction.Price.HasValue:
@@ -483,7 +483,7 @@ public class InvestmentAnalyzer
                     position.TotalCost += transaction.Quantity.Value * transaction.Price.Value;
                     position.TotalCommissions += transaction.Commission ?? 0;
                     break;
-                    
+
                 case "sell" when transaction.Quantity.HasValue && transaction.Price.HasValue:
                     position.Shares -= transaction.Quantity.Value;
                     // Calculate realized gain/loss
@@ -525,32 +525,32 @@ public class InvestmentAnalyzer
 public async Task ProcessLargeFileEfficiently(string filePath)
 {
     var parser = new QifParser();
-    
+
     // Use a CancellationToken to allow for cancellation
     using var cts = new CancellationTokenSource();
-    
+
     // Set up progress reporting
     var progress = new Progress<string>(message => Console.WriteLine($"Progress: {message}"));
-    
+
     try
     {
         // Parse the file
         var stopwatch = Stopwatch.StartNew();
-        var document = await parser.ParseFileAsync(filePath, cts.Token);
+        var document = await parser.ParseAsync(filePath, cts.Token);
         stopwatch.Stop();
-        
+
         Console.WriteLine($"Parsed {document.TotalItems} items in {stopwatch.ElapsedMilliseconds}ms");
         Console.WriteLine($"Memory usage: {GC.GetTotalMemory(false) / 1024 / 1024}MB");
-        
+
         // Process in batches to avoid memory issues
         const int batchSize = 1000;
         var transactions = document.Transactions;
-        
+
         for (int i = 0; i < transactions.Count; i += batchSize)
         {
             var batch = transactions.Skip(i).Take(batchSize);
             ProcessTransactionBatch(batch);
-            
+
             // Optional: Force garbage collection between batches
             if (i % (batchSize * 10) == 0)
             {
@@ -581,11 +581,11 @@ private void ProcessTransactionBatch(IEnumerable<QifTransaction> transactions)
 public async Task ProcessFileMemoryEfficient(string filePath)
 {
     var parser = new QifParser();
-    
+
     // Use streaming when possible
     using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 65536);
-    var document = await parser.ParseStreamAsync(stream);
-    
+    var document = await parser.ParseAsync(stream);
+
     // Process data as you go, don't store everything in memory
     await ProcessTransactionsStreaming(document.Transactions);
 }
@@ -594,10 +594,10 @@ private async Task ProcessTransactionsStreaming(IEnumerable<QifTransaction> tran
 {
     await using var output = new FileStream("processed_output.csv", FileMode.Create);
     await using var writer = new StreamWriter(output);
-    
+
     // Write CSV header
     await writer.WriteLineAsync("Date,Amount,Payee,Category");
-    
+
     // Process one transaction at a time
     foreach (var transaction in transactions)
     {
@@ -624,16 +624,16 @@ public async Task ParseFile_ValidBankFile_ReturnsCorrectData()
         LTest Category
         ^
         """;
-    
+
     var parser = new QifParser();
-    
+
     // Act
     var result = parser.ParseString(qifContent);
-    
+
     // Assert
     Assert.AreEqual(QifAccountType.Bank, result.AccountType);
     Assert.AreEqual(1, result.Transactions.Count);
-    
+
     var transaction = result.Transactions[0];
     Assert.AreEqual(new DateTime(2023, 1, 1), transaction.Date);
     Assert.AreEqual(1000.00m, transaction.Amount);
@@ -646,20 +646,20 @@ public void ParseString_NullInput_ThrowsArgumentNullException()
 {
     // Arrange
     var parser = new QifParser();
-    
+
     // Act & Assert
     Assert.Throws<ArgumentNullException>(() => parser.ParseString(null));
 }
 
 [Test]
-public async Task ParseFileAsync_NonExistentFile_ThrowsFileNotFoundException()
+public async Task ParseAsync_NonExistentFile_ThrowsFileNotFoundException()
 {
     // Arrange
     var parser = new QifParser();
-    
+
     // Act & Assert
-    await Assert.ThrowsAsync<FileNotFoundException>(() => 
-        parser.ParseFileAsync("non_existent_file.qif"));
+    await Assert.ThrowsAsync<FileNotFoundException>(() =>
+        parser.ParseAsync("non_existent_file.qif"));
 }
 ```
 
@@ -672,14 +672,14 @@ public async Task ParseRealWorldFile_ComplexQifFile_ParsesSuccessfully()
     // Arrange
     var parser = new QifParser();
     var testFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles", "complex_transactions.qif");
-    
+
     // Act
-    var document = await parser.ParseFileAsync(testFilePath);
-    
+    var document = await parser.ParseAsync(testFilePath);
+
     // Assert
     Assert.IsNotNull(document);
     Assert.Greater(document.TotalItems, 0);
-    
+
     // Verify specific business rules
     var splitTransactions = document.Transactions.Where(t => t.Splits.Any()).ToList();
     foreach (var transaction in splitTransactions)

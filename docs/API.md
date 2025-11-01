@@ -9,65 +9,77 @@ The main interface for QIF file parsing operations.
 ```csharp
 public interface IQifParser
 {
-    Task<QifDocument> ParseFileAsync(string filePath, CancellationToken cancellationToken = default);
-    Task<QifDocument> ParseStreamAsync(Stream stream, CancellationToken cancellationToken = default);
+    Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default);
+    Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default);
     QifDocument ParseString(string content);
 }
 ```
 
 #### Methods
 
-##### ParseFileAsync
+##### ParseAsync
+
 Parses a QIF file from the specified file path asynchronously.
 
 **Signature:**
+
 ```csharp
-Task<QifDocument> ParseFileAsync(string filePath, CancellationToken cancellationToken = default)
+Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default)
 ```
 
 **Parameters:**
+
 - `filePath` (string): Path to the QIF file
 - `cancellationToken` (CancellationToken, optional): Cancellation token
 
 **Returns:** Task<QifDocument> - Parsed QIF document
 
 **Exceptions:**
+
 - `ArgumentNullException`: Thrown when filePath is null or empty
 - `FileNotFoundException`: Thrown when the file does not exist
 - `OperationCanceledException`: Thrown when operation is cancelled
 
-##### ParseStreamAsync
+##### ParseAsync
+
 Parses QIF content from a stream asynchronously.
 
 **Signature:**
+
 ```csharp
-Task<QifDocument> ParseStreamAsync(Stream stream, CancellationToken cancellationToken = default)
+Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default)
 ```
 
 **Parameters:**
+
 - `stream` (Stream): Stream containing QIF data
 - `cancellationToken` (CancellationToken, optional): Cancellation token
 
 **Returns:** Task<QifDocument> - Parsed QIF document
 
 **Exceptions:**
+
 - `ArgumentNullException`: Thrown when stream is null
 - `OperationCanceledException`: Thrown when operation is cancelled
 
 ##### ParseString
+
 Parses QIF content from a string synchronously.
 
 **Signature:**
+
 ```csharp
 QifDocument ParseString(string content)
 ```
 
 **Parameters:**
+
 - `content` (string): QIF content as string
 
 **Returns:** QifDocument - Parsed QIF document
 
 **Exceptions:**
+
 - `ArgumentNullException`: Thrown when content is null
 
 ### Class: QifParser
@@ -356,7 +368,7 @@ public class QifClass
 using QifLib;
 
 var parser = new QifParser();
-var document = await parser.ParseFileAsync("transactions.qif");
+var document = await parser.ParseAsync("transactions.qif");
 
 Console.WriteLine($"Account Type: {document.AccountType}");
 Console.WriteLine($"Total Items: {document.TotalItems}");
@@ -369,7 +381,7 @@ using QifLib;
 
 var parser = new QifParser();
 using var stream = File.OpenRead("transactions.qif");
-var document = await parser.ParseStreamAsync(stream);
+var document = await parser.ParseAsync(stream);
 ```
 
 ### String Parsing
@@ -390,7 +402,7 @@ foreach (var transaction in document.Transactions)
     Console.WriteLine($"Date: {transaction.Date:d}");
     Console.WriteLine($"Amount: {transaction.Amount:C}");
     Console.WriteLine($"Payee: {transaction.Payee}");
-    
+
     // Process splits
     foreach (var split in transaction.Splits)
     {
@@ -404,7 +416,7 @@ foreach (var transaction in document.Transactions)
 ```csharp
 try
 {
-    var document = await parser.ParseFileAsync("file.qif");
+    var document = await parser.ParseAsync("file.qif");
 }
 catch (FileNotFoundException)
 {
@@ -426,7 +438,7 @@ The `QifParser` class is thread-safe for read operations. You can safely use the
 
 ## Performance Considerations
 
-- For large files, prefer `ParseFileAsync` or `ParseStreamAsync` for better responsiveness
+- For large files, prefer `ParseAsync` or `ParseAsync` for better responsiveness
 - The parser loads the entire file content into memory, so very large files (>1GB) may cause memory pressure
 - Consider using cancellation tokens for long-running operations
 - Parsing performance is approximately 10,000-50,000 transactions per second depending on hardware
@@ -434,6 +446,7 @@ The `QifParser` class is thread-safe for read operations. You can safely use the
 ## Versioning
 
 This API follows semantic versioning:
+
 - **Major version**: Breaking changes to public API
 - **Minor version**: New features, backward compatible
 - **Patch version**: Bug fixes, backward compatible

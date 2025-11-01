@@ -19,7 +19,7 @@ public class QifParser : IQifParser
     /// <returns>Parsed QIF document</returns>
     /// <exception cref="ArgumentNullException">Thrown when filePath is null or empty</exception>
     /// <exception cref="FileNotFoundException">Thrown when the file does not exist</exception>
-    public async Task<QifDocument> ParseFileAsync(string filePath, CancellationToken cancellationToken = default)
+    public async Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentNullException(nameof(filePath));
@@ -28,7 +28,7 @@ public class QifParser : IQifParser
             throw new FileNotFoundException($"QIF file not found: {filePath}");
 
         using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        return await ParseStreamAsync(fileStream, cancellationToken);
+        return await ParseAsync(fileStream, cancellationToken);
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class QifParser : IQifParser
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Parsed QIF document</returns>
     /// <exception cref="ArgumentNullException">Thrown when stream is null</exception>
-    public async Task<QifDocument> ParseStreamAsync(Stream stream, CancellationToken cancellationToken = default)
+    public async Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default)
     {
         if (stream == null)
             throw new ArgumentNullException(nameof(stream));
