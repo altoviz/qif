@@ -36,8 +36,8 @@ qif/
 ├── qif.sln                    # Solution file
 ├── qif-lib/                   # Main library project
 │   ├── qif-lib.csproj        # Library project file
-│   ├── IQifParser.cs         # Parser interface
-│   ├── QifParser.cs          # Main parser implementation
+│   ├── IQifReader.cs         # Reader interface
+│   ├── QifReader.cs          # Main reader implementation
 │   └── Models/               # Data models
 │       ├── QifAccountType.cs
 │       ├── QifClearedStatus.cs
@@ -65,7 +65,7 @@ qif/
 
 ### Design Patterns
 
-- **Repository Pattern**: Interface-based design (`IQifParser`)
+- **Repository Pattern**: Interface-based design (`IQifReader`)
 - **Factory Pattern**: Model creation through parsing methods
 - **Strategy Pattern**: Different parsing strategies for different QIF record types
 - **Null Object Pattern**: Graceful handling of missing data
@@ -80,22 +80,23 @@ qif/
 
 ### Supported Account Types
 
-| QIF Type | Enum Value | Description |
-|----------|------------|-------------|
-| `!Type:Bank` | `QifAccountType.Bank` | Bank account transactions |
-| `!Type:Cash` | `QifAccountType.Cash` | Cash account transactions |
-| `!Type:CCard` | `QifAccountType.CreditCard` | Credit card transactions |
-| `!Type:Invst` | `QifAccountType.Investment` | Investment transactions |
-| `!Type:Oth A` | `QifAccountType.OtherAsset` | Asset account transactions |
-| `!Type:Oth L` | `QifAccountType.OtherLiability` | Liability account transactions |
-| `!Type:Cat` | `QifAccountType.Category` | Category definitions |
-| `!Type:Class` | `QifAccountType.Class` | Class definitions |
-| `!Type:Memorized` | `QifAccountType.Memorized` | Memorized transactions |
-| `!Account` | `QifAccountType.Account` | Account information |
+| QIF Type          | Enum Value                      | Description                    |
+| ----------------- | ------------------------------- | ------------------------------ |
+| `!Type:Bank`      | `QifAccountType.Bank`           | Bank account transactions      |
+| `!Type:Cash`      | `QifAccountType.Cash`           | Cash account transactions      |
+| `!Type:CCard`     | `QifAccountType.CreditCard`     | Credit card transactions       |
+| `!Type:Invst`     | `QifAccountType.Investment`     | Investment transactions        |
+| `!Type:Oth A`     | `QifAccountType.OtherAsset`     | Asset account transactions     |
+| `!Type:Oth L`     | `QifAccountType.OtherLiability` | Liability account transactions |
+| `!Type:Cat`       | `QifAccountType.Category`       | Category definitions           |
+| `!Type:Class`     | `QifAccountType.Class`          | Class definitions              |
+| `!Type:Memorized` | `QifAccountType.Memorized`      | Memorized transactions         |
+| `!Account`        | `QifAccountType.Account`        | Account information            |
 
 ### Supported Field Types
 
 #### Non-Investment Transactions
+
 - `D` - Date (various formats supported)
 - `T` - Transaction amount
 - `C` - Cleared status (None, Cleared, Reconciled)
@@ -110,6 +111,7 @@ qif/
 - `^` - End of entry
 
 #### Investment Transactions
+
 - `D` - Date
 - `N` - Action
 - `Y` - Security
@@ -127,6 +129,7 @@ qif/
 ### Date Format Support
 
 The parser supports multiple date formats:
+
 - `M/d/yy`, `M/d/yyyy` (US format)
 - `MM/dd/yy`, `MM/dd/yyyy` (US format with leading zeros)
 - `M-d-yy`, `M-d-yyyy` (Dash separators)
@@ -162,12 +165,14 @@ The parser supports multiple date formats:
 ## Performance Requirements
 
 ### Parsing Performance
+
 - **Small files** (< 1MB): < 100ms
 - **Medium files** (1-10MB): < 1 second
 - **Large files** (10-100MB): < 10 seconds
 - **Memory usage**: O(n) where n is the number of records
 
 ### Scalability
+
 - Support for files with 100,000+ transactions
 - Streaming support for very large files
 - Thread-safe for concurrent access
@@ -175,11 +180,13 @@ The parser supports multiple date formats:
 ## Testing Requirements
 
 ### Test Coverage
+
 - **Minimum Code Coverage**: 90%
 - **Branch Coverage**: 85%
 - **All Public APIs**: 100% tested
 
 ### Test Categories
+
 1. **Unit Tests**: Individual component testing
 2. **Integration Tests**: File parsing end-to-end
 3. **Performance Tests**: Large file handling
@@ -187,6 +194,7 @@ The parser supports multiple date formats:
 5. **Regression Tests**: Real-world QIF files
 
 ### Test Files Required
+
 - Empty files
 - Single transaction files
 - Multi-transaction files
@@ -203,16 +211,19 @@ The parser supports multiple date formats:
 ## Security Considerations
 
 ### Input Validation
+
 - All string inputs are validated for length and content
 - File paths are validated for existence and accessibility
 - Stream inputs are validated for readability
 
 ### Memory Safety
+
 - No unsafe code blocks
 - Proper disposal of streams and file handles
 - Protection against memory exhaustion attacks
 
 ### Data Privacy
+
 - No logging of sensitive financial data
 - No caching of parsed content beyond method scope
 - Clear memory patterns for sensitive data
@@ -220,16 +231,19 @@ The parser supports multiple date formats:
 ## Compatibility Requirements
 
 ### .NET Compatibility
+
 - **Minimum**: .NET 9.0
 - **Target**: Latest LTS version
 - **Package Support**: NuGet package compatible
 
 ### Platform Support
+
 - Windows 10/11
 - macOS 10.15+
 - Linux (Ubuntu 20.04+, RHEL 8+)
 
 ### Interoperability
+
 - Compatible with Quicken 2010-2024
 - Compatible with other QIF-exporting software
 - Standard QIF format compliance
@@ -237,6 +251,7 @@ The parser supports multiple date formats:
 ## Future Considerations
 
 ### Potential Enhancements
+
 1. **Multi-section Files**: Better support for files with multiple `!Type:` sections
 2. **Validation**: Optional strict validation mode
 3. **Writing Support**: QIF file generation capabilities
@@ -245,6 +260,7 @@ The parser supports multiple date formats:
 6. **Streaming**: True streaming parser for infinite files
 
 ### Backward Compatibility
+
 - Semantic versioning (SemVer) compliance
 - Deprecation warnings for breaking changes
 - Migration guides for major version updates
@@ -252,6 +268,7 @@ The parser supports multiple date formats:
 ## Quality Assurance
 
 ### Code Quality Standards
+
 - Follow Microsoft C# coding conventions
 - XML documentation for all public APIs
 - Static analysis with no warnings
@@ -259,6 +276,7 @@ The parser supports multiple date formats:
 - Code analysis rules enforced
 
 ### Review Process
+
 - Peer review for all changes
 - Automated testing on all commits
 - Performance regression testing
@@ -267,12 +285,14 @@ The parser supports multiple date formats:
 ## Deployment
 
 ### Package Distribution
+
 - NuGet package publication
 - Symbol packages for debugging
 - Documentation package
 - Example projects
 
 ### Versioning Strategy
+
 - Semantic versioning (Major.Minor.Patch)
 - Release notes for all versions
 - Migration guides for breaking changes

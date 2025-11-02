@@ -6,10 +6,10 @@ namespace Altoviz.Qif.Tests;
 
 public class QifClassTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithClass_ParsesCorrectly()
+    public void ReadString_WithClass_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Class
@@ -18,7 +18,7 @@ public class QifClassTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(QifAccountType.Class, result.AccountType);
         Assert.Single(result.Classes);
@@ -29,7 +29,7 @@ public class QifClassTests
     }
 
     [Fact]
-    public void ParseString_WithMinimalClass_ParsesCorrectly()
+    public void ReadString_WithMinimalClass_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Class
@@ -37,7 +37,7 @@ public class QifClassTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Classes);
         var qifClass = result.Classes[0];
@@ -47,7 +47,7 @@ public class QifClassTests
     }
 
     [Fact]
-    public void ParseString_WithMultipleClasses_ParsesCorrectly()
+    public void ReadString_WithMultipleClasses_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Class
@@ -62,7 +62,7 @@ public class QifClassTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(3, result.Classes.Count);
         Assert.Equal("Business", result.Classes[0].Name);

@@ -6,10 +6,10 @@ namespace Altoviz.Qif.Tests;
 
 public class QifAccountTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithAccountInformation_ParsesCorrectly()
+    public void ReadString_WithAccountInformation_ParsesCorrectly()
     {
         var qifContent = """
             !Account
@@ -22,7 +22,7 @@ public class QifAccountTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Accounts);
         var account = result.Accounts[0];
@@ -36,7 +36,7 @@ public class QifAccountTests
     }
 
     [Fact]
-    public void ParseString_WithCreditCardAccount_ParsesCorrectly()
+    public void ReadString_WithCreditCardAccount_ParsesCorrectly()
     {
         var qifContent = """
             !Account
@@ -49,7 +49,7 @@ public class QifAccountTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Accounts);
         var account = result.Accounts[0];
@@ -61,7 +61,7 @@ public class QifAccountTests
     }
 
     [Fact]
-    public void ParseString_WithMinimalAccountInfo_ParsesCorrectly()
+    public void ReadString_WithMinimalAccountInfo_ParsesCorrectly()
     {
         var qifContent = """
             !Account
@@ -69,7 +69,7 @@ public class QifAccountTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Accounts);
         var account = result.Accounts[0];

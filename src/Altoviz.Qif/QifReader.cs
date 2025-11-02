@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,21 +12,28 @@ namespace Altoviz.Qif
 {
 
     /// <summary>
-    /// QIF file parser implementation with async/await support
+    /// QIF file reader implementation with async/await support
     /// </summary>
-    public class QifParser : IQifParser
+    public class QifReader : IQifReader
     {
         private const string EndOfEntry = "^";
 
         /// <summary>
-        /// Parses a QIF file from the specified file path asynchronously
+        /// Configuration options for parsing QIF files, including date and decimal formats.
+        /// Defaults to US formatting (MM/dd/yyyy dates, period decimal separator).
+        /// Use QifOptionsUS.Create() or QifOptionsFR.Create() for predefined locale settings.
+        /// </summary>
+        public QifOptions Options { get; set; } = new QifOptions();
+
+        /// <summary>
+        /// Reads a QIF file from the specified file path asynchronously
         /// </summary>
         /// <param name="filePath">Path to the QIF file</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Parsed QIF document</returns>
         /// <exception cref="ArgumentNullException">Thrown when filePath is null or empty</exception>
         /// <exception cref="FileNotFoundException">Thrown when the file does not exist</exception>
-        public async Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default)
+        public async Task<QifDocument> ReadAsync(string filePath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentNullException(nameof(filePath));
@@ -34,33 +42,33 @@ namespace Altoviz.Qif
                 throw new FileNotFoundException($"QIF file not found: {filePath}");
 
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return await ParseAsync(fileStream, cancellationToken);
+            return await ReadAsync(fileStream, cancellationToken);
         }
 
         /// <summary>
-        /// Parses QIF content from a stream asynchronously
+        /// Reads QIF content from a stream asynchronously
         /// </summary>
         /// <param name="stream">Stream containing QIF data</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Parsed QIF document</returns>
         /// <exception cref="ArgumentNullException">Thrown when stream is null</exception>
-        public async Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default)
+        public async Task<QifDocument> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             using var reader = new StreamReader(stream, Encoding.UTF8);
             var content = await reader.ReadToEndAsync();
-            return ParseString(content);
+            return ReadString(content);
         }
 
         /// <summary>
-        /// Parses QIF content from a string
+        /// Reads QIF content from a string
         /// </summary>
         /// <param name="content">QIF content as string</param>
         /// <returns>Parsed QIF document</returns>
         /// <exception cref="ArgumentNullException">Thrown when content is null</exception>
-        public QifDocument ParseString(string content)
+        public QifDocument ReadString(string content)
         {
             if (content == null)
                 throw new ArgumentNullException(nameof(content));
@@ -162,7 +170,7 @@ namespace Altoviz.Qif
             return entry;
         }
 
-        private static void ParseEntry(QifDocument document, List<string> entry)
+        private void ParseEntry(QifDocument document, List<string> entry)
         {
             if (entry.Count == 0) return;
 
@@ -209,7 +217,7 @@ namespace Altoviz.Qif
             }
         }
 
-        private static QifTransaction? ParseTransaction(List<string> entry)
+        private QifTransaction? ParseTransaction(List<string> entry)
         {
             var transaction = new QifTransaction();
             var hasData = false;
@@ -265,7 +273,7 @@ namespace Altoviz.Qif
             return hasData ? transaction : null;
         }
 
-        private static QifInvestmentTransaction? ParseInvestmentTransaction(List<string> entry)
+        private QifInvestmentTransaction? ParseInvestmentTransaction(List<string> entry)
         {
             var transaction = new QifInvestmentTransaction();
             var hasData = false;
@@ -323,7 +331,7 @@ namespace Altoviz.Qif
             return hasData ? transaction : null;
         }
 
-        private static QifMemorizedTransaction? ParseMemorizedTransaction(List<string> entry)
+        private QifMemorizedTransaction? ParseMemorizedTransaction(List<string> entry)
         {
             var transaction = new QifMemorizedTransaction();
             var hasData = false;
@@ -400,7 +408,7 @@ namespace Altoviz.Qif
             return hasData ? transaction : null;
         }
 
-        private static void ParseAmortizationField(QifAmortization amortization, char field, string value)
+        private void ParseAmortizationField(QifAmortization amortization, char field, string value)
         {
             switch (field)
             {
@@ -428,7 +436,7 @@ namespace Altoviz.Qif
             }
         }
 
-        private static QifAccount? ParseAccount(List<string> entry)
+        private QifAccount? ParseAccount(List<string> entry)
         {
             var account = new QifAccount();
             var hasData = false;
@@ -470,7 +478,7 @@ namespace Altoviz.Qif
             return hasData ? account : null;
         }
 
-        private static QifCategory? ParseCategory(List<string> entry)
+        private QifCategory? ParseCategory(List<string> entry)
         {
             var category = new QifCategory();
             var hasData = false;
@@ -512,7 +520,7 @@ namespace Altoviz.Qif
             return hasData ? category : null;
         }
 
-        private static QifClass? ParseClass(List<string> entry)
+        private QifClass? ParseClass(List<string> entry)
         {
             var qifClass = new QifClass();
             var hasData = false;
@@ -539,7 +547,7 @@ namespace Altoviz.Qif
             return hasData ? qifClass : null;
         }
 
-        private static void ParseSplits(List<string> entry, List<QifSplit> splits)
+        private void ParseSplits(List<string> entry, List<QifSplit> splits)
         {
             QifSplit? currentSplit = null;
 
@@ -574,21 +582,13 @@ namespace Altoviz.Qif
                 splits.Add(currentSplit);
         }
 
-        private static DateTime? ParseDate(string value)
+        private DateTime? ParseDate(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
-
             // QIF dates can be in various formats: M/d/yy, M/d/yyyy, M/d/'yy
             var cleanValue = value.Replace("'", "").Trim();
-
-            var formats = new[]
-            {
-            "M/d/yy", "M/d/yyyy", "MM/dd/yy", "MM/dd/yyyy",
-            "M-d-yy", "M-d-yyyy", "MM-dd-yy", "MM-dd-yyyy",
-            "M.d.yy", "M.d.yyyy", "MM.dd.yy", "MM.dd.yyyy"
-        };
-
+            var formats = Options?.DateFormats ?? QifOptionsUS.DefaultDateFormats;
             foreach (var format in formats)
             {
                 if (DateTime.TryParseExact(cleanValue, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
@@ -596,13 +596,9 @@ namespace Altoviz.Qif
                     // Handle 2-digit years
                     if (date.Year < 100)
                         date = date.AddYears(2000);
-                    else if (date.Year < 1950)
-                        date = date.AddYears(100);
-
                     return date;
                 }
             }
-
             // Fallback to standard parsing
             if (DateTime.TryParse(cleanValue, out var fallbackDate))
             {
@@ -610,19 +606,29 @@ namespace Altoviz.Qif
             }
             return null;
         }
-
-        private static decimal? ParseDecimal(string value)
+        private decimal? ParseDecimal(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
 
-            // Remove common formatting characters
-            var cleanValue = value.Replace(",", "").Replace("$", "").Trim();
+            var decimalSeparator = Options?.DecimalSeparator ?? QifOptionsUS.DefaultDecimalSeparator;
+            var numbers = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
+            // Clean the value by keeping only numbers, decimal separator, and minus sign
+            var cleanValue = new string(value.Where(c => c == decimalSeparator || numbers.Contains(c) || c == '-').ToArray());
+
+            // If using comma as decimal separator, replace it with period for parsing
+            if (decimalSeparator == ',')
+            {
+                cleanValue = cleanValue.Replace(',', '.');
+            }
+
+            // Try to parse the cleaned value
             if (decimal.TryParse(cleanValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
             {
                 return result;
             }
+
             return null;
         }
 
@@ -630,7 +636,6 @@ namespace Altoviz.Qif
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
-
             if (int.TryParse(value.Trim(), out var result))
             {
                 return result;
@@ -642,7 +647,6 @@ namespace Altoviz.Qif
         {
             if (string.IsNullOrWhiteSpace(value))
                 return QifClearedStatus.None;
-
             switch (value.ToUpperInvariant())
             {
                 case "C":

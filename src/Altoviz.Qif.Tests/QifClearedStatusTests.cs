@@ -6,7 +6,7 @@ namespace Altoviz.Qif.Tests;
 
 public class QifClearedStatusTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Theory]
     [InlineData("C", QifClearedStatus.Cleared)]
@@ -18,7 +18,7 @@ public class QifClearedStatusTests
     [InlineData("RECONCILED", QifClearedStatus.Reconciled)]
     [InlineData("", QifClearedStatus.None)]
     [InlineData("Unknown", QifClearedStatus.None)]
-    public void ParseString_WithVariousClearedStatuses_ParsesCorrectly(string clearedString, QifClearedStatus expectedStatus)
+    public void ReadString_WithVariousClearedStatuses_ParsesCorrectly(string clearedString, QifClearedStatus expectedStatus)
     {
         var qifContent = $"""
             !Type:Bank
@@ -29,7 +29,7 @@ public class QifClearedStatusTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];

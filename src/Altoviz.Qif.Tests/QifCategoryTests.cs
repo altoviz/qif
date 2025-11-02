@@ -6,10 +6,10 @@ namespace Altoviz.Qif.Tests;
 
 public class QifCategoryTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithIncomeCategory_ParsesCorrectly()
+    public void ReadString_WithIncomeCategory_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cat
@@ -22,7 +22,7 @@ public class QifCategoryTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(QifAccountType.Category, result.AccountType);
         Assert.Single(result.Categories);
@@ -37,7 +37,7 @@ public class QifCategoryTests
     }
 
     [Fact]
-    public void ParseString_WithExpenseCategory_ParsesCorrectly()
+    public void ReadString_WithExpenseCategory_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cat
@@ -48,7 +48,7 @@ public class QifCategoryTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Categories);
         var category = result.Categories[0];
@@ -61,7 +61,7 @@ public class QifCategoryTests
     }
 
     [Fact]
-    public void ParseString_WithMinimalCategory_ParsesCorrectly()
+    public void ReadString_WithMinimalCategory_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cat
@@ -69,7 +69,7 @@ public class QifCategoryTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Categories);
         var category = result.Categories[0];
@@ -83,7 +83,7 @@ public class QifCategoryTests
     }
 
     [Fact]
-    public void ParseString_WithMultipleCategories_ParsesCorrectly()
+    public void ReadString_WithMultipleCategories_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cat
@@ -101,7 +101,7 @@ public class QifCategoryTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(3, result.Categories.Count);
         Assert.True(result.Categories[0].IsIncomeCategory);

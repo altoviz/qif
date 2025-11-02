@@ -6,7 +6,7 @@ namespace Altoviz.Qif.Tests;
 
 public class QifDecimalParsingTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Theory]
     [InlineData("100.00", 100.00)]
@@ -18,7 +18,7 @@ public class QifDecimalParsingTests
     [InlineData("0", 0)]
     [InlineData(".50", 0.50)]
     [InlineData("-.75", -0.75)]
-    public void ParseString_WithVariousAmountFormats_ParsesCorrectly(string amountString, decimal expectedAmount)
+    public void ReadString_WithVariousAmountFormats_ParsesCorrectly(string amountString, decimal expectedAmount)
     {
         var qifContent = $"""
             !Type:Bank
@@ -28,7 +28,7 @@ public class QifDecimalParsingTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];
@@ -36,7 +36,7 @@ public class QifDecimalParsingTests
     }
 
     [Fact]
-    public void ParseString_WithInvalidAmount_SetsAmountToNull()
+    public void ReadString_WithInvalidAmount_SetsAmountToNull()
     {
         var qifContent = """
             !Type:Bank
@@ -46,14 +46,14 @@ public class QifDecimalParsingTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Transactions);
         Assert.Null(result.Transactions[0].Amount);
     }
 
     [Fact]
-    public void ParseString_WithEmptyAmount_SetsAmountToNull()
+    public void ReadString_WithEmptyAmount_SetsAmountToNull()
     {
         var qifContent = """
             !Type:Bank
@@ -63,7 +63,7 @@ public class QifDecimalParsingTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.Transactions);
         Assert.Null(result.Transactions[0].Amount);

@@ -10,7 +10,7 @@ namespace Altoviz.Qif.Tests;
 /// </summary>
 public class QifFileEdgeCaseTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
     private readonly string _filesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "files");
 
     [Fact]
@@ -20,7 +20,7 @@ public class QifFileEdgeCaseTests
         var filePath = Path.Combine(_filesDirectory, "sample.qif");
 
         var startTime = DateTime.Now;
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
         var endTime = DateTime.Now;
 
         var duration = endTime - startTime;
@@ -34,7 +34,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_ComplexStructure_ParsesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "test.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Verify the file parses without errors
         Assert.NotNull(result);
@@ -51,7 +51,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_DateVariations_ParsesDatesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "sample.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Check that dates are parsed correctly from sample.qif which has many transactions
         var transactionsWithDates = result.Transactions.Where(t => t.Date.HasValue).ToList();
@@ -71,7 +71,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_AmountVariations_ParsesAmountsCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "sample.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Check various amount formats
         var transactionsWithAmounts = result.Transactions.Where(t => t.Amount.HasValue).ToList();
@@ -90,7 +90,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_SpecialCharacters_HandlesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "test_circular_reference.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.True(result.Transactions.Count >= 2);
@@ -109,7 +109,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_UnknownAccountType_HandlesGracefully()
     {
         var filePath = Path.Combine(_filesDirectory, "test_unknown_account_type.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.NotNull(result);
 
@@ -121,7 +121,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_WithComments_IgnoresComments()
     {
         var filePath = Path.Combine(_filesDirectory, "test_unknown_account_type.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // File contains comments starting with # - parser should handle gracefully
         Assert.NotNull(result);
@@ -134,7 +134,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_MalformedData_HandlesGracefully()
     {
         var filePath = Path.Combine(_filesDirectory, "test_nosymbol.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // This file has malformed security data - should not crash
         Assert.NotNull(result);
@@ -147,7 +147,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_SplitTransactions_CalculatesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "test_split.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];
@@ -164,7 +164,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_MultipleAccountTypes_ParsesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "test.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // This file contains multiple sections with different types
         // Current parser takes the first !Type: found and parses accordingly
@@ -178,7 +178,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_ClearedStatusVariations_ParsesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "test.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Check various cleared status values
         var clearedTransactions = result.Transactions.Where(t => t.ClearedStatus != QifClearedStatus.None).ToList();
@@ -194,7 +194,7 @@ public class QifFileEdgeCaseTests
     public async Task ParseFile_CategoryHierarchy_PreservesStructure()
     {
         var filePath = Path.Combine(_filesDirectory, "test_category_inherit.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Should parse without errors
         Assert.NotNull(result);
@@ -229,7 +229,7 @@ public class QifFileEdgeCaseTests
             var content = await File.ReadAllTextAsync(filePath);
             if (content.Contains(expectedDateString))
             {
-                var result = await _parser.ParseAsync(filePath);
+                var result = await _parser.ReadAsync(filePath);
 
                 // Look for any transaction with the expected date, regardless of exact string match
                 var transactionWithDate = result.Transactions.FirstOrDefault(t =>

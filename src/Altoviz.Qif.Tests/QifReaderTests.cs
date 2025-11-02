@@ -4,69 +4,69 @@ using Xunit;
 
 namespace Altoviz.Qif.Tests;
 
-public class QifParserTests
+public class QifReaderTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithNullContent_ThrowsArgumentNullException()
+    public void ReadString_WithNullContent_ThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => _parser.ParseString(null!));
+        Assert.Throws<ArgumentNullException>(() => _parser.ReadString(null!));
     }
 
     [Fact]
-    public void ParseString_WithEmptyContent_ReturnsEmptyDocument()
+    public void ReadString_WithEmptyContent_ReturnsEmptyDocument()
     {
-        var result = _parser.ParseString(string.Empty);
+        var result = _parser.ReadString(string.Empty);
 
         Assert.NotNull(result);
         Assert.Equal(0, result.TotalItems);
     }
 
     [Fact]
-    public async Task ParseAsync_WithNullFilePath_ThrowsArgumentNullException()
+    public async Task ReadAsync_WithNullFilePath_ThrowsArgumentNullException()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseAsync((Stream)null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ReadAsync((Stream)null!));
     }
 
     [Fact]
-    public async Task ParseAsync_WithNonExistentFile_ThrowsFileNotFoundException()
+    public async Task ReadAsync_WithNonExistentFile_ThrowsFileNotFoundException()
     {
-        await Assert.ThrowsAsync<FileNotFoundException>(() => _parser.ParseAsync("nonexistent.qif"));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _parser.ReadAsync("nonexistent.qif"));
     }
 
     [Fact]
-    public async Task ParseAsync_WithNullStream_ThrowsArgumentNullException()
+    public async Task ReadAsync_WithNullStream_ThrowsArgumentNullException()
     {
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ParseAsync((Stream)null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _parser.ReadAsync((Stream)null!));
     }
 
     [Fact]
-    public void ParseString_WithBankHeaderOnly_ReturnsBankDocument()
+    public void ReadString_WithBankHeaderOnly_ReturnsBankDocument()
     {
         var qifContent = "!Type:Bank";
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Equal(0, result.TotalItems);
     }
 
     [Fact]
-    public void ParseString_WithAllTransferOption_SetsImportAllTransfers()
+    public void ReadString_WithAllTransferOption_SetsImportAllTransfers()
     {
         var qifContent = """
             !Type:Bank
             !Option:AllXfr
             """;
 
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.True(result.ImportAllTransfers);
     }
 
     [Fact]
-    public void ParseString_WithSimpleBankTransaction_ParsesCorrectly()
+    public void ReadString_WithSimpleBankTransaction_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -78,7 +78,7 @@ public class QifParserTests
             ^
             """;
 
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Single(result.Transactions);
@@ -92,7 +92,7 @@ public class QifParserTests
     }
 
     [Fact]
-    public void ParseString_WithTransactionWithSplits_ParsesCorrectly()
+    public void ReadString_WithTransactionWithSplits_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -108,7 +108,7 @@ public class QifParserTests
             ^
             """;
 
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];
@@ -122,7 +122,7 @@ public class QifParserTests
     }
 
     [Fact]
-    public void ParseString_WithClearedStatus_ParsesCorrectly()
+    public void ReadString_WithClearedStatus_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -133,14 +133,14 @@ public class QifParserTests
             ^
             """;
 
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Single(result.Transactions);
         Assert.Equal(QifClearedStatus.Cleared, result.Transactions[0].ClearedStatus);
     }
 
     [Fact]
-    public void ParseString_WithAddress_ParsesCorrectly()
+    public void ReadString_WithAddress_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -158,7 +158,7 @@ public class QifParserTests
             ^
             """;
 
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
 
         Assert.Single(result.Transactions);
         var transaction = result.Transactions[0];

@@ -5,16 +5,17 @@ This document provides comprehensive examples of how to use the QIF Parser Libra
 ## Table of Contents
 
 1. [Basic Usage](#basic-usage)
-2. [Async Operations](#async-operations)
-3. [Error Handling](#error-handling)
-4. [Working with Different Account Types](#working-with-different-account-types)
-5. [Processing Transactions](#processing-transactions)
-6. [Handling Split Transactions](#handling-split-transactions)
-7. [Investment Transactions](#investment-transactions)
-8. [Memorized Transactions](#memorized-transactions)
-9. [Categories and Classes](#categories-and-classes)
-10. [Performance Optimization](#performance-optimization)
-11. [Testing Scenarios](#testing-scenarios)
+2. [Locale and Format Options](#locale-and-format-options)
+3. [Async Operations](#async-operations)
+4. [Error Handling](#error-handling)
+5. [Working with Different Account Types](#working-with-different-account-types)
+6. [Processing Transactions](#processing-transactions)
+7. [Handling Split Transactions](#handling-split-transactions)
+8. [Investment Transactions](#investment-transactions)
+9. [Memorized Transactions](#memorized-transactions)
+10. [Categories and Classes](#categories-and-classes)
+11. [Performance Optimization](#performance-optimization)
+12. [Testing Scenarios](#testing-scenarios)
 
 ## Basic Usage
 
@@ -25,10 +26,10 @@ using QifLib;
 using QifLib.Models;
 
 // Create parser instance
-var parser = new QifParser();
+var parser = new QifReader();
 
 // Parse a QIF file
-var document = await parser.ParseAsync("bank_transactions.qif");
+var document = await parser.ReadAsync("bank_transactions.qif");
 
 // Display basic information
 Console.WriteLine($"Account Type: {document.AccountType}");
@@ -53,13 +54,94 @@ var qifContent = """
     ^
     """;
 
-var parser = new QifParser();
-var document = parser.ParseString(qifContent);
+var parser = new QifReader();
+var document = parser.ReadString(qifContent);
 
 Console.WriteLine($"Parsed {document.Transactions.Count} transactions");
 ```
 
-## Async Operations
+## Locale and Format Options
+
+The QIF Parser supports different locale-specific date and decimal formats through the `QifOptions` class.
+
+### Using US Format (Default)
+
+```csharp
+using Altoviz.Qif;
+using Altoviz.Qif.Models;
+
+var parser = new QifReader();
+// Default is US format: MM/dd/yyyy dates, period decimal separator
+
+var qifContent = """
+    !Type:Bank
+    D12/31/2023
+    T1,234.56
+    PUS Transaction
+    ^
+    """;
+
+var document = parser.ReadString(qifContent);
+var transaction = document.Transactions[0];
+Console.WriteLine($"Date: {transaction.Date}"); // 12/31/2023
+Console.WriteLine($"Amount: {transaction.Amount}"); // 1234.56
+```
+
+### Using French Format
+
+```csharp
+var parser = new QifReader();
+parser.Options = QifOptionsFR.Create(); // French format: dd/MM/yyyy dates, comma decimal separator
+
+var qifContent = """
+    !Type:Bank
+    D31/12/2023
+    T1 234,56
+    PFrench Transaction
+    ^
+    """;
+
+var document = parser.ReadString(qifContent);
+var transaction = document.Transactions[0];
+Console.WriteLine($"Date: {transaction.Date}"); // 12/31/2023
+Console.WriteLine($"Amount: {transaction.Amount}"); // 1234.56
+```
+
+### Using Custom Format Options
+
+```csharp
+var customOptions = new QifOptions(
+    dateFormats: new[] { "yyyy-MM-dd", "dd.MM.yyyy" },
+    decimalSeparator: '.'
+);
+
+var parser = new QifReader();
+parser.Options = customOptions;
+
+var qifContent = """
+    !Type:Bank
+    D2023-12-31
+    T1234.56
+    PCustom Format Transaction
+    ^
+    """;
+
+var document = parser.ReadString(qifContent);
+```
+
+### Predefined Options Comparison
+
+````csharp
+// US Options
+var usOptions = QifOptionsUS.Create();
+Console.WriteLine("US Date Formats: " + string.Join(", ", usOptions.DateFormats));
+Console.WriteLine("US Decimal Separator: " + usOptions.DecimalSeparator);
+
+// French Options
+var frOptions = QifOptionsFR.Create();
+Console.WriteLine("FR Date Formats: " + string.Join(", ", frOptions.DateFormats));
+Console.WriteLine("FR Decimal Separator: " + frOptions.DecimalSeparator);
+```## Async Operations
 
 ### File Parsing with Cancellation
 
@@ -68,31 +150,31 @@ using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
 try
 {
-    var document = await parser.ParseAsync("large_file.qif", cts.Token);
+    var document = await parser.ReadAsync("large_file.qif", cts.Token);
     Console.WriteLine("Parsing completed successfully");
 }
 catch (OperationCanceledException)
 {
     Console.WriteLine("Parsing was cancelled due to timeout");
 }
-```
+````
 
 ### Stream Parsing
 
 ```csharp
 // From file stream
 using var fileStream = File.OpenRead("transactions.qif");
-var document = await parser.ParseAsync(fileStream);
+var document = await parser.ReadAsync(fileStream);
 
 // From memory stream
 var bytes = Encoding.UTF8.GetBytes(qifContent);
 using var memoryStream = new MemoryStream(bytes);
-var document2 = await parser.ParseAsync(memoryStream);
+var document2 = await parser.ReadAsync(memoryStream);
 
 // From network stream
 using var httpClient = new HttpClient();
 using var httpStream = await httpClient.GetStreamAsync("https://example.com/data.qif");
-var document3 = await parser.ParseAsync(httpStream);
+var document3 = await parser.ReadAsync(httpStream);
 ```
 
 ## Error Handling
@@ -104,8 +186,8 @@ public async Task<QifDocument?> SafeParseFile(string filePath)
 {
     try
     {
-        var parser = new QifParser();
-        return await parser.ParseAsync(filePath);
+        var parser = new QifReader();
+        return await parser.ReadAsync(filePath);
     }
     catch (FileNotFoundException ex)
     {
@@ -524,7 +606,7 @@ public class InvestmentAnalyzer
 ```csharp
 public async Task ProcessLargeFileEfficiently(string filePath)
 {
-    var parser = new QifParser();
+    var parser = new QifReader();
 
     // Use a CancellationToken to allow for cancellation
     using var cts = new CancellationTokenSource();
@@ -536,7 +618,7 @@ public async Task ProcessLargeFileEfficiently(string filePath)
     {
         // Parse the file
         var stopwatch = Stopwatch.StartNew();
-        var document = await parser.ParseAsync(filePath, cts.Token);
+        var document = await parser.ReadAsync(filePath, cts.Token);
         stopwatch.Stop();
 
         Console.WriteLine($"Parsed {document.TotalItems} items in {stopwatch.ElapsedMilliseconds}ms");
@@ -580,11 +662,11 @@ private void ProcessTransactionBatch(IEnumerable<QifTransaction> transactions)
 ```csharp
 public async Task ProcessFileMemoryEfficient(string filePath)
 {
-    var parser = new QifParser();
+    var parser = new QifReader();
 
     // Use streaming when possible
     using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 65536);
-    var document = await parser.ParseAsync(stream);
+    var document = await parser.ReadAsync(stream);
 
     // Process data as you go, don't store everything in memory
     await ProcessTransactionsStreaming(document.Transactions);
@@ -625,10 +707,10 @@ public async Task ParseFile_ValidBankFile_ReturnsCorrectData()
         ^
         """;
 
-    var parser = new QifParser();
+    var parser = new QifReader();
 
     // Act
-    var result = parser.ParseString(qifContent);
+    var result = parser.ReadString(qifContent);
 
     // Assert
     Assert.AreEqual(QifAccountType.Bank, result.AccountType);
@@ -642,24 +724,24 @@ public async Task ParseFile_ValidBankFile_ReturnsCorrectData()
 }
 
 [Test]
-public void ParseString_NullInput_ThrowsArgumentNullException()
+public void ReadString_NullInput_ThrowsArgumentNullException()
 {
     // Arrange
-    var parser = new QifParser();
+    var parser = new QifReader();
 
     // Act & Assert
-    Assert.Throws<ArgumentNullException>(() => parser.ParseString(null));
+    Assert.Throws<ArgumentNullException>(() => parser.ReadString(null));
 }
 
 [Test]
-public async Task ParseAsync_NonExistentFile_ThrowsFileNotFoundException()
+public async Task ReadAsync_NonExistentFile_ThrowsFileNotFoundException()
 {
     // Arrange
-    var parser = new QifParser();
+    var parser = new QifReader();
 
     // Act & Assert
     await Assert.ThrowsAsync<FileNotFoundException>(() =>
-        parser.ParseAsync("non_existent_file.qif"));
+        parser.ReadAsync("non_existent_file.qif"));
 }
 ```
 
@@ -670,11 +752,11 @@ public async Task ParseAsync_NonExistentFile_ThrowsFileNotFoundException()
 public async Task ParseRealWorldFile_ComplexQifFile_ParsesSuccessfully()
 {
     // Arrange
-    var parser = new QifParser();
+    var parser = new QifReader();
     var testFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestFiles", "complex_transactions.qif");
 
     // Act
-    var document = await parser.ParseAsync(testFilePath);
+    var document = await parser.ReadAsync(testFilePath);
 
     // Assert
     Assert.IsNotNull(document);

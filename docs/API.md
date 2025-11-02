@@ -2,29 +2,29 @@
 
 ## Namespace: QifLib
 
-### Interface: IQifParser
+### Interface: IQifReader
 
 The main interface for QIF file parsing operations.
 
 ```csharp
-public interface IQifParser
+public interface IQifReader
 {
-    Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default);
-    Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default);
-    QifDocument ParseString(string content);
+    Task<QifDocument> ReadAsync(string filePath, CancellationToken cancellationToken = default);
+    Task<QifDocument> ReadAsync(Stream stream, CancellationToken cancellationToken = default);
+    QifDocument ReadString(string content);
 }
 ```
 
 #### Methods
 
-##### ParseAsync
+##### ReadAsync
 
 Parses a QIF file from the specified file path asynchronously.
 
 **Signature:**
 
 ```csharp
-Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToken = default)
+Task<QifDocument> ReadAsync(string filePath, CancellationToken cancellationToken = default)
 ```
 
 **Parameters:**
@@ -40,14 +40,14 @@ Task<QifDocument> ParseAsync(string filePath, CancellationToken cancellationToke
 - `FileNotFoundException`: Thrown when the file does not exist
 - `OperationCanceledException`: Thrown when operation is cancelled
 
-##### ParseAsync
+##### ReadAsync
 
 Parses QIF content from a stream asynchronously.
 
 **Signature:**
 
 ```csharp
-Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken = default)
+Task<QifDocument> ReadAsync(Stream stream, CancellationToken cancellationToken = default)
 ```
 
 **Parameters:**
@@ -62,14 +62,14 @@ Task<QifDocument> ParseAsync(Stream stream, CancellationToken cancellationToken 
 - `ArgumentNullException`: Thrown when stream is null
 - `OperationCanceledException`: Thrown when operation is cancelled
 
-##### ParseString
+##### ReadString
 
 Parses QIF content from a string synchronously.
 
 **Signature:**
 
 ```csharp
-QifDocument ParseString(string content)
+QifDocument ReadString(string content)
 ```
 
 **Parameters:**
@@ -82,15 +82,15 @@ QifDocument ParseString(string content)
 
 - `ArgumentNullException`: Thrown when content is null
 
-### Class: QifParser
+### Class: QifReader
 
 The main implementation of the QIF parser.
 
 ```csharp
-public class QifParser : IQifParser
+public class QifReader : IQifReader
 ```
 
-Implements all methods from `IQifParser` interface.
+Implements all methods from `IQifReader` interface.
 
 ## Namespace: QifLib.Models
 
@@ -367,8 +367,8 @@ public class QifClass
 ```csharp
 using QifLib;
 
-var parser = new QifParser();
-var document = await parser.ParseAsync("transactions.qif");
+var parser = new QifReader();
+var document = await parser.ReadAsync("transactions.qif");
 
 Console.WriteLine($"Account Type: {document.AccountType}");
 Console.WriteLine($"Total Items: {document.TotalItems}");
@@ -379,9 +379,9 @@ Console.WriteLine($"Total Items: {document.TotalItems}");
 ```csharp
 using QifLib;
 
-var parser = new QifParser();
+var parser = new QifReader();
 using var stream = File.OpenRead("transactions.qif");
-var document = await parser.ParseAsync(stream);
+var document = await parser.ReadAsync(stream);
 ```
 
 ### String Parsing
@@ -390,8 +390,8 @@ var document = await parser.ParseAsync(stream);
 using QifLib;
 
 var qifContent = "!Type:Bank\nD1/1/2023\nT100.00\nPTest Payee\n^";
-var parser = new QifParser();
-var document = parser.ParseString(qifContent);
+var parser = new QifReader();
+var document = parser.ReadString(qifContent);
 ```
 
 ### Working with Transactions
@@ -416,7 +416,7 @@ foreach (var transaction in document.Transactions)
 ```csharp
 try
 {
-    var document = await parser.ParseAsync("file.qif");
+    var document = await parser.ReadAsync("file.qif");
 }
 catch (FileNotFoundException)
 {
@@ -434,11 +434,11 @@ catch (OperationCanceledException)
 
 ## Thread Safety
 
-The `QifParser` class is thread-safe for read operations. You can safely use the same parser instance across multiple threads. However, the returned `QifDocument` and its contained objects are not thread-safe and should not be modified concurrently.
+The `QifReader` class is thread-safe for read operations. You can safely use the same parser instance across multiple threads. However, the returned `QifDocument` and its contained objects are not thread-safe and should not be modified concurrently.
 
 ## Performance Considerations
 
-- For large files, prefer `ParseAsync` or `ParseAsync` for better responsiveness
+- For large files, prefer `ReadAsync` or `ReadAsync` for better responsiveness
 - The parser loads the entire file content into memory, so very large files (>1GB) may cause memory pressure
 - Consider using cancellation tokens for long-running operations
 - Parsing performance is approximately 10,000-50,000 transactions per second depending on hardware

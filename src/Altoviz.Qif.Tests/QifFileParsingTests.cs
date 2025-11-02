@@ -9,14 +9,14 @@ namespace Altoviz.Qif.Tests;
 /// </summary>
 public class QifFileParsingTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
     private readonly string _filesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "files");
 
     [Fact]
     public async Task ParseFile_Empty_ReturnsEmptyDocument()
     {
         var filePath = Path.Combine(_filesDirectory, "empty.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.NotNull(result);
         Assert.Equal(0, result.TotalItems);
@@ -26,7 +26,7 @@ public class QifFileParsingTests
     public async Task ParseFile_Sample_ParsesCorrectly()
     {
         var filePath = Path.Combine(_filesDirectory, "sample.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.True(result.Transactions.Count > 0);
@@ -52,7 +52,7 @@ public class QifFileParsingTests
     public async Task ParseFile_Test_ParsesComplexFile()
     {
         var filePath = Path.Combine(_filesDirectory, "test.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // The file contains multiple sections with different types
         // Current parser implementation takes the first !Type: found which is Class
@@ -66,7 +66,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestOthA_ParsesOtherAssetAccount()
     {
         var filePath = Path.Combine(_filesDirectory, "test_oth_a.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // The file starts with !Type:Class, so it will be parsed as Class type
         // But it contains various types of data
@@ -77,7 +77,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestSplit_ParsesSplitTransaction()
     {
         var filePath = Path.Combine(_filesDirectory, "test_split.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Single(result.Transactions);
@@ -98,7 +98,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestClearAutoswitch_ParsesAccountWithClearAutoswitch()
     {
         var filePath = Path.Combine(_filesDirectory, "test_clear_autoswitch.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Current parser doesn't recognize !Clear:AutoSwitch as a type header
         // So it should parse the !Account section when found
@@ -109,7 +109,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestOptionAutoswitch_ParsesMultipleAccounts()
     {
         var filePath = Path.Combine(_filesDirectory, "test_option_autoswitch.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Should not crash and should parse any accounts found
         Assert.True(result.Accounts.Count >= 0);
@@ -119,7 +119,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestNoSymbol_HandlesSecurityWithoutSymbol()
     {
         var filePath = Path.Combine(_filesDirectory, "test_nosymbol.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // This file tests handling of malformed or incomplete security entries
         // Should not throw exceptions and handle gracefully
@@ -130,7 +130,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestCategoryInherit_ParsesCategoryHierarchy()
     {
         var filePath = Path.Combine(_filesDirectory, "test_category_inherit.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         // Should parse without errors
         Assert.NotNull(result);
@@ -147,7 +147,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestCategoryOverride_ParsesTransactionsWithCategories()
     {
         var filePath = Path.Combine(_filesDirectory, "test_category_override.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.True(result.Transactions.Count >= 4);
@@ -168,7 +168,7 @@ public class QifFileParsingTests
     public async Task ParseFile_TestTransactionBeforeAccountDefinition1_ParsesTransactionsOnly()
     {
         var filePath = Path.Combine(_filesDirectory, "test_transaction_before_account_definition_1.qif");
-        var result = await _parser.ParseAsync(filePath);
+        var result = await _parser.ReadAsync(filePath);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Equal(2, result.Transactions.Count);
@@ -189,7 +189,7 @@ public class QifFileParsingTests
 
         if (File.Exists(filePath))
         {
-            var result = await _parser.ParseAsync(filePath);
+            var result = await _parser.ReadAsync(filePath);
             Assert.NotNull(result);
             // Add specific assertions based on the file content
         }
@@ -207,7 +207,7 @@ public class QifFileParsingTests
 
         if (File.Exists(filePath))
         {
-            var result = await _parser.ParseAsync(filePath);
+            var result = await _parser.ReadAsync(filePath);
             Assert.NotNull(result);
             // Should handle unknown account types gracefully without throwing
         }
@@ -225,7 +225,7 @@ public class QifFileParsingTests
 
         if (File.Exists(filePath))
         {
-            var result = await _parser.ParseAsync(filePath);
+            var result = await _parser.ReadAsync(filePath);
             Assert.NotNull(result);
             // Should handle circular references without infinite loops
         }
@@ -255,7 +255,7 @@ public class QifFileParsingTests
         if (File.Exists(filePath))
         {
             // Should not throw any exceptions regardless of file content
-            var result = await _parser.ParseAsync(filePath);
+            var result = await _parser.ReadAsync(filePath);
             Assert.NotNull(result);
         }
         else
@@ -280,7 +280,7 @@ public class QifFileParsingTests
         {
             try
             {
-                var result = await _parser.ParseAsync(filePath);
+                var result = await _parser.ReadAsync(filePath);
                 Assert.NotNull(result);
 
                 // Basic validation - result should be parseable

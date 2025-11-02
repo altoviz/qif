@@ -6,10 +6,10 @@ namespace Altoviz.Qif.Tests;
 
 public class QifMemorizedTransactionTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithMemorizedCheckTransaction_ParsesCorrectly()
+    public void ReadString_WithMemorizedCheckTransaction_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Memorized
@@ -20,7 +20,7 @@ public class QifMemorizedTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(QifAccountType.Memorized, result.AccountType);
         Assert.Single(result.MemorizedTransactions);
@@ -33,7 +33,7 @@ public class QifMemorizedTransactionTests
     }
 
     [Fact]
-    public void ParseString_WithMemorizedDepositTransaction_ParsesCorrectly()
+    public void ReadString_WithMemorizedDepositTransaction_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Memorized
@@ -43,7 +43,7 @@ public class QifMemorizedTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.MemorizedTransactions);
         var transaction = result.MemorizedTransactions[0];
@@ -54,7 +54,7 @@ public class QifMemorizedTransactionTests
     }
 
     [Fact]
-    public void ParseString_WithMemorizedTransactionWithAmortization_ParsesCorrectly()
+    public void ReadString_WithMemorizedTransactionWithAmortization_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Memorized
@@ -72,7 +72,7 @@ public class QifMemorizedTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.MemorizedTransactions);
         var transaction = result.MemorizedTransactions[0];
@@ -88,7 +88,7 @@ public class QifMemorizedTransactionTests
     }
 
     [Fact]
-    public void ParseString_WithAllMemorizedTransactionTypes_ParsesCorrectly()
+    public void ReadString_WithAllMemorizedTransactionTypes_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Memorized
@@ -114,7 +114,7 @@ public class QifMemorizedTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(5, result.MemorizedTransactions.Count);
         

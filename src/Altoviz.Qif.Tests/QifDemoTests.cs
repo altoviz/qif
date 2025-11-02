@@ -8,7 +8,7 @@ namespace Altoviz.Qif.Tests;
 public class QifDemoTests
 {
     private readonly ITestOutputHelper _output;
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
     private readonly string _filesDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "files");
 
     public QifDemoTests(ITestOutputHelper output)
@@ -23,7 +23,7 @@ public class QifDemoTests
         var sampleFilePath = Path.Combine(_filesDirectory, "sample.qif");
 
         // Act
-        var document = await _parser.ParseAsync(sampleFilePath);
+        var document = await _parser.ReadAsync(sampleFilePath);
 
         // Assert and Display Results
         Assert.NotNull(document);

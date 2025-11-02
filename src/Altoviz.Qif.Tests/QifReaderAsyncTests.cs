@@ -5,12 +5,12 @@ using Xunit;
 
 namespace Altoviz.Qif.Tests;
 
-public class QifParserAsyncTests
+public class QifReaderAsyncTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public async Task ParseAsync_WithValidStream_ParsesCorrectly()
+    public async Task ReadAsync_WithValidStream_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Bank
@@ -23,7 +23,7 @@ public class QifParserAsyncTests
             """;
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(qifContent));
-        var result = await _parser.ParseAsync(stream);
+        var result = await _parser.ReadAsync(stream);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Single(result.Transactions);
@@ -31,7 +31,7 @@ public class QifParserAsyncTests
     }
 
     [Fact]
-    public async Task ParseAsync_WithValidTempFile_ParsesCorrectly()
+    public async Task ReadAsync_WithValidTempFile_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Cash
@@ -46,7 +46,7 @@ public class QifParserAsyncTests
         try
         {
             await File.WriteAllTextAsync(tempFile, qifContent);
-            var result = await _parser.ParseAsync(tempFile);
+            var result = await _parser.ReadAsync(tempFile);
 
             Assert.Equal(QifAccountType.Cash, result.AccountType);
             Assert.Single(result.Transactions);
@@ -61,7 +61,7 @@ public class QifParserAsyncTests
     }
 
     [Fact]
-    public async Task ParseAsync_WithCancellation_ThrowsOperationCanceledException()
+    public async Task ReadAsync_WithCancellation_ThrowsOperationCanceledException()
     {
         var qifContent = """
             !Type:Bank
@@ -76,11 +76,11 @@ public class QifParserAsyncTests
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            _parser.ParseAsync(stream, cts.Token));
+            _parser.ReadAsync(stream, cts.Token));
     }
 
     [Fact]
-    public async Task ParseAsync_File_WithCancellation_ThrowsOperationCanceledException()
+    public async Task ReadAsync_File_WithCancellation_ThrowsOperationCanceledException()
     {
         var qifContent = "!Type:Bank\nD6/1/94\nT100.00\nPTest\n^";
         var tempFile = Path.GetTempFileName();
@@ -93,7 +93,7 @@ public class QifParserAsyncTests
             cts.Cancel();
 
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-                _parser.ParseAsync(tempFile, cts.Token));
+                _parser.ReadAsync(tempFile, cts.Token));
         }
         finally
         {
@@ -103,7 +103,7 @@ public class QifParserAsyncTests
     }
 
     [Fact]
-    public async Task ParseAsync_Stream_WithLargeFile_HandlesCorrectly()
+    public async Task ReadAsync_Stream_WithLargeFile_HandlesCorrectly()
     {
         var sb = new StringBuilder();
         sb.AppendLine("!Type:Bank");
@@ -119,7 +119,7 @@ public class QifParserAsyncTests
         }
 
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
-        var result = await _parser.ParseAsync(stream);
+        var result = await _parser.ReadAsync(stream);
 
         Assert.Equal(QifAccountType.Bank, result.AccountType);
         Assert.Equal(1000, result.Transactions.Count);

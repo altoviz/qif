@@ -6,10 +6,10 @@ namespace Altoviz.Qif.Tests;
 
 public class QifInvestmentTransactionTests
 {
-    private readonly QifParser _parser = new();
+    private readonly QifReader _parser = new();
 
     [Fact]
-    public void ParseString_WithInvestmentTransaction_ParsesCorrectly()
+    public void ReadString_WithInvestmentTransaction_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Invst
@@ -24,7 +24,7 @@ public class QifInvestmentTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Equal(QifAccountType.Investment, result.AccountType);
         Assert.Single(result.InvestmentTransactions);
@@ -41,7 +41,7 @@ public class QifInvestmentTransactionTests
     }
 
     [Fact]
-    public void ParseString_WithInvestmentBuyTransaction_ParsesCorrectly()
+    public void ReadString_WithInvestmentBuyTransaction_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Invst
@@ -57,7 +57,7 @@ public class QifInvestmentTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.InvestmentTransactions);
         var transaction = result.InvestmentTransactions[0];
@@ -73,7 +73,7 @@ public class QifInvestmentTransactionTests
     }
 
     [Fact]
-    public void ParseString_WithInvestmentCommission_ParsesCorrectly()
+    public void ReadString_WithInvestmentCommission_ParsesCorrectly()
     {
         var qifContent = """
             !Type:Invst
@@ -87,7 +87,7 @@ public class QifInvestmentTransactionTests
             ^
             """;
         
-        var result = _parser.ParseString(qifContent);
+        var result = _parser.ReadString(qifContent);
         
         Assert.Single(result.InvestmentTransactions);
         var transaction = result.InvestmentTransactions[0];
