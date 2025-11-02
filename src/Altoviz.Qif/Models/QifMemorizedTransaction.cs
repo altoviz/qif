@@ -1,22 +1,27 @@
-namespace Altoviz.Qif.Models;
-
-/// <summary>
-/// Represents a memorized transaction in QIF format
-/// </summary>
-public class QifMemorizedTransaction : QifTransactionBase
+namespace Altoviz.Qif.Models
 {
+
     /// <summary>
-    /// Type of memorized transaction
+    /// Represents a memorized transaction in QIF format
     /// </summary>
-    public QifMemorizedTransactionType TransactionType { get; set; }
-    
-    /// <summary>
-    /// Amortization information (optional)
-    /// </summary>
-    public QifAmortization? Amortization { get; set; }
-    
-    public override string ToString()
+    public class QifMemorizedTransaction : QifTransactionBase
     {
-        return $"Type: {TransactionType}, Amount: {Amount:C}, Payee: {Payee}, Category: {Category}";
+        /// <summary>
+        /// Type of memorized transaction
+        /// </summary>
+        public QifMemorizedTransactionType TransactionType { get; set; }
+
+        /// <summary>
+        /// Amortization information (optional)
+        /// </summary>
+        public QifAmortization? Amortization { get; set; }
+        /// <summary>
+        /// Returns a string representation of the QifMemorizedTransaction
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"Type: {TransactionType}, Amount: {Amount:C}, Payee: {Payee}, Category: {Category}";
+        }
     }
 }

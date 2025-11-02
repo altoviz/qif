@@ -1,22 +1,27 @@
-namespace Altoviz.Qif.Models;
-
-/// <summary>
-/// Represents a class in QIF format
-/// </summary>
-public class QifClass
+namespace Altoviz.Qif.Models
 {
+
     /// <summary>
-    /// Class name
+    /// Represents a class in QIF format
     /// </summary>
-    public string? Name { get; set; }
-    
-    /// <summary>
-    /// Class description
-    /// </summary>
-    public string? Description { get; set; }
-    
-    public override string ToString()
+    public class QifClass
     {
-        return $"Name: {Name}, Description: {Description}";
+        /// <summary>
+        /// Class name
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Class description
+        /// </summary>
+        public string? Description { get; set; }
+        /// <summary>
+        /// Returns a string representation of the QifClass
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"Name: {Name}, Description: {Description}";
+        }
     }
 }

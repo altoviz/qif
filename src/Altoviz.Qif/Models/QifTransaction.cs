@@ -1,12 +1,18 @@
-namespace Altoviz.Qif.Models;
-
-/// <summary>
-/// Represents a non-investment QIF transaction (Bank, Cash, Credit Card, Asset, Liability accounts)
-/// </summary>
-public class QifTransaction : QifTransactionBase
+namespace Altoviz.Qif.Models
 {
-    public override string ToString()
+
+    /// <summary>
+    /// Represents a non-investment QIF transaction (Bank, Cash, Credit Card, Asset, Liability accounts)
+    /// </summary>
+    public class QifTransaction : QifTransactionBase
     {
-        return $"Date: {Date:d}, Amount: {Amount:C}, Payee: {Payee}, Category: {Category}";
+        /// <summary>
+        /// Returns a string representation of the transaction
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return $"Date: {Date:d}, Amount: {Amount:C}, Payee: {Payee}, Category: {Category}";
+        }
     }
 }
