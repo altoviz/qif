@@ -13,6 +13,10 @@ A complete C# library for parsing Quicken Interchange Format (QIF) files with as
 - **Memorized Transactions**: Support for memorized transactions with amortization
 - **Type Safety**: Strongly typed models with proper enums for status and types
 
+## Status
+
+[![Build and publish](https://github.com/altoviz/qif/actions/workflows/build-qif.yaml/badge.svg)](https://github.com/altoviz/qif/actions/workflows/build-qif.yaml)
+
 ## Quick Start
 
 ### Basic Usage
