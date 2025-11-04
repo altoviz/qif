@@ -92,7 +92,7 @@ jobs:
         path: ${{ inputs.source-path }}/TestResults/*.trx
         reporter: dotnet-trx
         fail-on-empty: "false"
-        token: ${{ secrets.GH_PAT }}
+        token: ${{ secrets.gh-pat }}
     - name: Build and Pack NuGet package
       id: build-pack
       if: steps.build-tests.outcome == 'success'
@@ -116,11 +116,11 @@ jobs:
         name: nugetPackage
         path: artifacts/
     - name: Prep packages
-      run: dotnet nuget add source --username danvy --password ${{ secrets.GH_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/altoviz/index.json"
+      run: dotnet nuget add source --username danvy --password ${{ secrets.gh-pat }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/altoviz/index.json"
     - name: Push package to GitHub packages
       id: release-push
       # Only release if there has been a commit/version change
-      run: dotnet nuget push artifacts/*.nupkg --api-key ${{ secrets.GH_PAT }} --source "github"
+      run: dotnet nuget push artifacts/*.nupkg --api-key ${{ secrets.gh-pat }} --source "github"
     - name: Create Release
       uses: ncipollo/release-action@v1
       if: steps.release-push.outcome == 'success'
@@ -128,4 +128,4 @@ jobs:
         tag: ${{ needs.build.outputs.version }}
         name: Release ${{ needs.build.outputs.version }}
         artifacts: "artifacts/*.nupkg"
-        token: ${{ secrets.GH_PAT }}
+        token: ${{ secrets.gh-pat }}
