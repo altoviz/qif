@@ -3,21 +3,21 @@ name: Action to build and publish the project as a nuget package to github packa
 on:
   workflow_call:
     inputs:
-      source_path:
+      source-path:
         required: true
         description: "Path to the source folder. Example : src"
         default: "src"
         type: string
-      project_path:
+      project-path:
         required: true
         description: "Path to the project folder. Example : Altoviz.Ofx"
         type: string
-      project_file:
+      project-file:
         description: "Path to the project file. Example : Altoviz.Ofx/Altoviz.Ofx.csproj"
         required: true
         type: string
     secrets:
-      gh_pat:
+      gh-pat:
         description: "GitHub Personal Access Token"
         required: true
 permissions:
@@ -36,8 +36,6 @@ jobs:
       assembly-file-version: ${{ steps.build-gitversion.outputs.AssemblySemFileVer }}
       commits-since-version-source: ${{ steps.build-gitversion.outputs.CommitsSinceVersionSource }} 
     env:
-      PROJECT_PATH: Altoviz.Camt
-      PROJECT_FILE: Altoviz.Camt/Altoviz.Camt.csproj
       BUILD_CONFIGURATION: Release
     steps:
     - name: Prerequisites
@@ -75,10 +73,10 @@ jobs:
     - name : Display .NET version
       run: dotnet --version
     - name: Restore .NET dependencies
-      run: dotnet restore ${{ env.PROJECT_FILE }}
+      run: dotnet restore ${{ inputs.project-file }}
     - name: Build .NET project
       id: build-build
-      run: dotnet build --no-restore --nologo /p:Version=${{ steps.build-gitversion.outputs.AssemblySemVer }} /p:AssemblyVersion=${{steps.build-gitversion.outputs.AssemblySemVer }} /p:NuGetVersion=${{steps.build-gitversion.outputs.AssemblySemVer }} --configuration ${{ env.BUILD_CONFIGURATION }} ${{ env.PROJECT_FILE }}
+      run: dotnet build --no-restore --nologo /p:Version=${{ steps.build-gitversion.outputs.AssemblySemVer }} /p:AssemblyVersion=${{steps.build-gitversion.outputs.AssemblySemVer }} /p:NuGetVersion=${{steps.build-gitversion.outputs.AssemblySemVer }} --configuration ${{ env.BUILD_CONFIGURATION }} ${{ inputs.project-file }}
     - name: Run .NET tests
       id: build-tests
       if: steps.build-build.outcome == 'success'
@@ -98,14 +96,14 @@ jobs:
     - name: Build and Pack NuGet package
       id: build-pack
       if: steps.build-tests.outcome == 'success'
-      run: dotnet pack --no-build --nologo -p:Version='${{ steps.build-gitversion.outputs.AssemblySemVer }}' --configuration ${{ env.BUILD_CONFIGURATION }} ${{ env.PROJECT_FILE }}
+      run: dotnet pack --no-build --nologo -p:Version='${{ steps.build-gitversion.outputs.AssemblySemVer }}' --configuration ${{ env.BUILD_CONFIGURATION }} ${{ inputs.project-file }}
     - name: Upload NuGet package artifacts
       id: build-upload
       uses: actions/upload-artifact@v5
       if: steps.build-pack.outcome == 'success'
       with:
         name: nugetPackage
-        path: ${{ inputs.source_path }}/${{ env.PROJECT_PATH }}/bin/Release/*.nupkg
+        path: ${{ inputs.source-path }}/${{ inputs.project-path }}/bin/Release/*.nupkg
   release:
     runs-on: ubuntu-latest
     needs: [build]
