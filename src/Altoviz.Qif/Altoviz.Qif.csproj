@@ -5,6 +5,16 @@
     <RootNamespace>Altoviz.Qif</RootNamespace>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Altoviz.Qif</RootNamespace>
+    <AssemblyName>Altoviz.Qif</AssemblyName>
+    <PackageId>Altoviz.Qif</PackageId>
+    <PackageDescription>QIF file reader for .Net</PackageDescription>
+    <Version>1.0.0</Version>
+    <Authors>Alex Danvy</Authors>
+    <Company>Altoviz</Company>
+    <Description>QIF file reader for .Net</Description>
+    <RepositoryUrl>https://github.com/altoviz/qif</RepositoryUrl>
+    <Copyright>Copyright (c) 2025 Altoviz</Copyright>
   </PropertyGroup>
 
 </Project>

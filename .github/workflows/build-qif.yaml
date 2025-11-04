@@ -1,0 +1,33 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Forces a new build"
+        required: true
+        default: "false"
+      force_release:
+        description: "Forces a new release"
+        required: true
+        default: "false"
+concurrency:
+  group: pipeline-${{ github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  actions: read
+  checks: write
+jobs:
+  call-build:
+    uses: ./.github/workflows/build.yaml
+    with:
+      source_path: "src"
+      project_path: "Altoviz.Qif"
+      project_file: "Altoviz.Qif/Altoviz.Qif.csproj"
+    secrets:
+      gh_pat: ${{ secrets.GH_PAT }}

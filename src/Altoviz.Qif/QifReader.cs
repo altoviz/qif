@@ -41,6 +41,8 @@ namespace Altoviz.Qif
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"QIF file not found: {filePath}");
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
             return await ReadAsync(fileStream, cancellationToken);
         }
@@ -57,8 +59,13 @@ namespace Altoviz.Qif
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             using var reader = new StreamReader(stream, Encoding.UTF8);
             var content = await reader.ReadToEndAsync();
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             return ReadString(content);
         }
 
