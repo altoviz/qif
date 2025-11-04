@@ -108,7 +108,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     # Only run if the workflow was triggered by a tag
-    if: github.ref_type == 'tag' && needs.build.outputs.commits-since-version-source > 0
+    # if: github.ref_type == 'tag' && needs.build.outputs.commits-since-version-source > 0
+    if: github.ref_type == 'tag'
     steps:
     - name: Download Nuget package artifacts
       uses: actions/download-artifact@v6
