@@ -22,8 +22,9 @@ on:
         required: true
 permissions:
   contents: read
-  actions: read
+  issues: read
   checks: write
+  pull-requests: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -82,17 +83,22 @@ jobs:
       if: steps.build-build.outcome == 'success'
       # run: dotnet test --no-build --nologo --verbosity detailed --logger "trx;LogFileName=TestResults.trx" --results-directory ./TestResults --configuration ${{ env.BUILD_CONFIGURATION }}
       run: dotnet test --verbosity normal --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults --configuration ${{ env.BUILD_CONFIGURATION }}
-    - name: Create .NET tests report
-      id: release-tests-report
-      uses: dorny/test-reporter@v2
-      if: steps.build-tests.outcome == 'success'
+    # - name: Create .NET tests report
+    #   id: release-tests-report
+    #   uses: dorny/test-reporter@v2
+    #   if: steps.build-tests.outcome == 'success'
+    #   with:
+    #     name: .NET tests report
+    #     # We're not in the same working directory as the tests results, so we need to specify the path
+    #     path: ${{ inputs.source-path }}/TestResults/*.trx
+    #     reporter: dotnet-trx
+    #     fail-on-empty: "false"
+    #     token: ${{ secrets.gh-pat }}
+    - name: .NET tests report
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: (!cancelled())
       with:
-        name: .NET tests report
-        # We're not in the same working directory as the tests results, so we need to specify the path
-        path: ${{ inputs.source-path }}/TestResults/*.trx
-        reporter: dotnet-trx
-        fail-on-empty: "false"
-        token: ${{ secrets.gh-pat }}
+        files: ${{ inputs.source-path }}/TestResults/*.trx
     - name: Build and Pack NuGet package
       id: build-pack
       if: steps.build-tests.outcome == 'success'
