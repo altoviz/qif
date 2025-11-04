@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ${{ inputs.source_path }}
+        working-directory: ${{ inputs.source-path }}
     outputs: 
       version: ${{ steps.build-gitversion.outputs.SemVer }}
       assembly-version: ${{ steps.build-gitversion.outputs.AssemblySemVer }}
@@ -41,7 +41,7 @@ jobs:
     - name: Prerequisites
       working-directory: .
       run: |
-        mkdir ./${{ inputs.source_path }}
+        mkdir ./${{ inputs.source-path }}
         mkdir ./artifacts
     - name: Checkout repository
       uses: actions/checkout@v5
@@ -89,7 +89,7 @@ jobs:
       with:
         name: .NET tests report
         # We're not in the same working directory as the tests results, so we need to specify the path
-        path: ${{ inputs.source_path }}/TestResults/*.trx
+        path: ${{ inputs.source-path }}/TestResults/*.trx
         reporter: dotnet-trx
         fail-on-empty: "false"
         token: ${{ secrets.GH_PAT }}
