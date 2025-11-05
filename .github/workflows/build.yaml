@@ -112,29 +112,30 @@ jobs:
       uses: ctrf-io/github-test-reporter@v1
       with:
         report-path: ${{ inputs.source-path }}/TestResults/*.json
-        summary-report: true
-        summary-delta-report: true
-        tests-changed-report: true
+        # summary-report: true
+        # summary-delta-report: true
+        # # tests-changed-report: true INVALID
         github-report: true
-        test-report: true
-        test-list-report: true
-        failed-report: true
-        fail-rate-report: true
-        flaky-report: true
-        flaky-rate-report: true
-        failed-folded-report: true
-        previous-results-report: true
-        insights-report: true
-        slowest-report: true
-        ai-report: false
-        ai-summary-report: false
-        skipped-report: true
-        suite-folded-report: true
-        suite-list-report: true
-        file-report: true
-        pull-request-report: true
-        commit-report: true
-        community-report: true
+        # test-report: true
+        # test-list-report: true
+        # failed-report: true
+        # fail-rate-report: true
+        # flaky-report: true
+        # flaky-rate-report: true
+        # failed-folded-report: true
+        # previous-results-report: true
+        # insights-report: true
+        # slowest-report: true
+        # ai-report: false
+        # # ai-summary-report: false INVALID
+        # skipped-report: true
+        # suite-folded-report: true
+        # suite-list-report: true
+        # file-report: true
+        # pull-request-report: true
+        # commit-report: true
+        # community-report: true
+        fetch-previous-results: true
         upload-artifact: true
         exit-on-no-files: true
         exit-on-fail: true
