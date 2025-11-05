@@ -111,7 +111,7 @@ jobs:
     - name: Publish tests report
       uses: ctrf-io/github-test-reporter@v1
       with:
-        report-path: TestResults/*.json
+        report-path: ${{ inputs.source-path }}/TestResults/*.json
         summary-report: true
         summary-delta-report: true
         tests-changed-report: true
