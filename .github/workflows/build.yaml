@@ -85,7 +85,7 @@ jobs:
     - name: Convert .NET test results to JSON
       if: steps.build-tests.outcome == 'success'
       run: |
-        dotnet tool run dotnet-ctrf-json-reporter convert --input ${{ inputs.source-path }}/TestResults/*.trx
+        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --test-tool "xunit"
     # - name: Create .NET tests report
     #   id: release-tests-report
     #   uses: dorny/test-reporter@v2
