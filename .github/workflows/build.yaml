@@ -74,7 +74,7 @@ jobs:
     - name: Install .NET tools
       run: |
         dotnet new tool-manifest --force
-        dotnet tool install DotnetCtrfJsonReporter --global
+        dotnet tool install DotnetCtrfJsonReporter --local
     - name: Restore .NET dependencies
       run: dotnet restore ${{ inputs.project-file }}
     - name: Build .NET project
@@ -88,7 +88,7 @@ jobs:
     - name: Convert .NET test results to JSON
       if: steps.build-tests.outcome == 'success'
       run: |
-        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --test-tool "xunit"
+        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --test-tool "xunit" --allow-roll-forward
     # - name: Create .NET tests report
     #   id: release-tests-report
     #   uses: dorny/test-reporter@v2
