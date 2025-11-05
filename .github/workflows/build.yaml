@@ -123,11 +123,11 @@ jobs:
         flaky-report: true
         flaky-rate-report: true
         failed-folded-report: true
-        previous-results-report: true
+        previous-results-report: false
         insights-report: true
         slowest-report: true
-        ai-report: true
-        ai-summary-report: true
+        ai-report: false
+        ai-summary-report: false
         skipped-report: true
         suite-folded-report: true
         suite-list-report: true
