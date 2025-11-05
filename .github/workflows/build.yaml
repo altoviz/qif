@@ -65,7 +65,10 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: 9.x
+        # .NET 8 added for DotnetCtrfJsonReporter
+        dotnet-version: |
+          8.x
+          9.x
     - name: Display .NET version
       run: dotnet --version
     - name: Install .NET tools
