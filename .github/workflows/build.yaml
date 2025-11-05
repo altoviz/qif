@@ -65,10 +65,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v5
       with:
-        # .NET 8 added for DotnetCtrfJsonReporter
-        dotnet-version: |
-          8.x
-          9.x
+        dotnet-version: 9.x
     - name: Display .NET version
       run: dotnet --version
     - name: Install .NET tools
@@ -88,7 +85,7 @@ jobs:
     - name: Convert .NET test results to JSON
       if: steps.build-tests.outcome == 'success'
       run: |
-        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --test-tool "xunit" --allow-roll-forward
+        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --output-directory TestResults/ --test-tool "xunit" --allow-roll-forward
     # - name: Create .NET tests report
     #   id: release-tests-report
     #   uses: dorny/test-reporter@v2
