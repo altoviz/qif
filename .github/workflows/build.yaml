@@ -71,7 +71,7 @@ jobs:
     - name: Install .NET tools
       run: |
         dotnet new tool-manifest --force
-        dotnet tool install DotnetCtrfJsonReporter --local
+        dotnet tool install DotnetCtrfJsonReporter --global
     - name: Restore .NET dependencies
       run: dotnet restore ${{ inputs.project-file }}
     - name: Build .NET project
