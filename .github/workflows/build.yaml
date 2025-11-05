@@ -68,10 +68,10 @@ jobs:
         dotnet-version: 9.x
     - name: Display .NET version
       run: dotnet --version
-    - name: Install .NET tools
-      run: |
-        dotnet new tool-manifest --force
-        dotnet tool install DotnetCtrfJsonReporter --local
+    # - name: Install .NET tools
+    #   run: |
+    #     dotnet new tool-manifest --force
+    #     dotnet tool install DotnetCtrfJsonReporter --local
     - name: Restore .NET dependencies
       run: dotnet restore ${{ inputs.project-file }}
     - name: Build .NET project
@@ -82,21 +82,21 @@ jobs:
       if: steps.build-build.outcome == 'success'
       # run: dotnet test --no-build --nologo --verbosity detailed --logger "trx;LogFileName=TestResults.trx" --results-directory ./TestResults --configuration ${{ env.BUILD_CONFIGURATION }}
       run: dotnet test --verbosity normal --logger "trx;LogFileName=TestResults.trx" --results-directory TestResults --configuration ${{ env.BUILD_CONFIGURATION }}
-    - name: Convert .NET test results to JSON
-      if: steps.build-tests.outcome == 'success'
-      run: |
-        dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --output-directory TestResults/ --test-tool "xunit" --allow-roll-forward
-    # - name: Create .NET tests report
-    #   id: release-tests-report
-    #   uses: dorny/test-reporter@v2
+    # - name: Convert .NET test results to JSON
     #   if: steps.build-tests.outcome == 'success'
-    #   with:
-    #     name: .NET tests report
-    #     # We're not in the same working directory as the tests results, so we need to specify the path
-    #     path: ${{ inputs.source-path }}/TestResults/*.trx
-    #     reporter: dotnet-trx
-    #     fail-on-empty: "false"
-    #     token: ${{ secrets.gh-pat }}
+    #   run: |
+    #     dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --output-directory TestResults/ --test-tool "xunit" --allow-roll-forward
+    - name: Create .NET tests report
+      id: release-tests-report
+      uses: dorny/test-reporter@v2
+      if: steps.build-tests.outcome == 'success'
+      with:
+        name: .NET tests report
+        # We're not in the same working directory as the tests results, so we need to specify the path
+        path: ${{ inputs.source-path }}/TestResults/*.trx
+        reporter: dotnet-trx
+        fail-on-empty: "false"
+        token: ${{ secrets.gh-pat }}
     # - name: .NET tests report
     #   uses: EnricoMi/publish-unit-test-result-action@v2
     #   if: (!cancelled())
@@ -108,42 +108,42 @@ jobs:
     #     json_test_case_results: true
     #     action_fail: true
     #     action_fail_on_inconclusive: true
-    - name: Publish tests report
-      uses: ctrf-io/github-test-reporter@v1
-      with:
-        report-path: ${{ inputs.source-path }}/TestResults/*.json
-        # summary-report: true
-        # summary-delta-report: true
-        # # tests-changed-report: true INVALID
-        github-report: true
-        # test-report: true
-        # test-list-report: true
-        # failed-report: true
-        # fail-rate-report: true
-        # flaky-report: true
-        # flaky-rate-report: true
-        # failed-folded-report: true
-        # previous-results-report: true
-        # insights-report: true
-        # slowest-report: true
-        # ai-report: false
-        # # ai-summary-report: false INVALID
-        # skipped-report: true
-        # suite-folded-report: true
-        # suite-list-report: true
-        # file-report: true
-        # pull-request-report: true
-        # commit-report: true
-        # community-report: true
-        fetch-previous-results: true
-        upload-artifact: true
-        exit-on-no-files: true
-        exit-on-fail: true
-        exit-on-empty: true
-        collapse-large-reports: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.gh-pat }}
-      if: always()
+    # - name: Publish tests report
+    #   uses: ctrf-io/github-test-reporter@v1
+    #   with:
+    #     report-path: ${{ inputs.source-path }}/TestResults/*.json
+    #     # summary-report: true
+    #     # summary-delta-report: true
+    #     # # tests-changed-report: true INVALID
+    #     github-report: true
+    #     # test-report: true
+    #     # test-list-report: true
+    #     # failed-report: true
+    #     # fail-rate-report: true
+    #     # flaky-report: true
+    #     # flaky-rate-report: true
+    #     # failed-folded-report: true
+    #     # previous-results-report: true
+    #     # insights-report: true
+    #     # slowest-report: true
+    #     # ai-report: false
+    #     # # ai-summary-report: false INVALID
+    #     # skipped-report: true
+    #     # suite-folded-report: true
+    #     # suite-list-report: true
+    #     # file-report: true
+    #     # pull-request-report: true
+    #     # commit-report: true
+    #     # community-report: true
+    #     fetch-previous-results: true
+    #     upload-artifact: true
+    #     exit-on-no-files: true
+    #     exit-on-fail: true
+    #     exit-on-empty: true
+    #     collapse-large-reports: true
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.gh-pat }}
+    #   if: always()
     - name: Build and Pack NuGet package
       id: build-pack
       if: steps.build-tests.outcome == 'success'
