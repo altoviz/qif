@@ -123,7 +123,7 @@ jobs:
         flaky-report: true
         flaky-rate-report: true
         failed-folded-report: true
-        previous-results-report: false
+        previous-results-report: true
         insights-report: true
         slowest-report: true
         ai-report: false
@@ -141,7 +141,7 @@ jobs:
         exit-on-empty: true
         collapse-large-reports: true
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.gh-pat }}
       if: always()
     - name: Build and Pack NuGet package
       id: build-pack
