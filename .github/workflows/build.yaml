@@ -150,7 +150,7 @@ jobs:
       run: dotnet pack --no-build --nologo -p:Version='${{ steps.build-gitversion.outputs.AssemblySemVer }}' --configuration ${{ env.BUILD_CONFIGURATION }} ${{ inputs.project-file }}
     - name: Upload NuGet package artifacts
       id: build-upload
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v6
       if: steps.build-pack.outcome == 'success'
       with:
         name: nugetPackage
@@ -163,7 +163,7 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
     - name: Download Nuget package artifacts
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v7
       with:
         name: nugetPackage
         path: artifacts/
