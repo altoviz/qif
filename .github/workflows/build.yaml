@@ -30,7 +30,7 @@ jobs:
       version: ${{ steps.build-gitversion.outputs.SemVer }}
       assembly-version: ${{ steps.build-gitversion.outputs.AssemblySemVer }}
       assembly-file-version: ${{ steps.build-gitversion.outputs.AssemblySemFileVer }}
-      commits-since-version-source: ${{ steps.build-gitversion.outputs.CommitsSinceVersionSource }} 
+      commits-since-version-source: ${{ steps.build-gitversion.outputs.VersionSourceDistance }} 
     env:
       BUILD_CONFIGURATION: Release
     steps:
@@ -40,17 +40,22 @@ jobs:
         mkdir ./${{ inputs.source-path }}
         mkdir ./artifacts
     - name: Checkout repository
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         # fetch-depth is required for GitVersion
         fetch-depth: 0
-    - name: Install GitVersion
-      uses: gittools/actions/gitversion/setup@v4
+    # GitTools v5 installs GitVersion's net10.0 build, so the .NET 10 SDK must come first.
+    - name: Setup .NET 10 for GitVersion
+      uses: actions/setup-dotnet@v6
       with:
-        versionSpec: '6.x'
+        dotnet-version: 10.x
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v5.0.0
+      with:
+        versionSpec: '7.0.x'
         preferLatestVersion: true
     - name: Determine Version
-      uses: gittools/actions/gitversion/execute@v4
+      uses: gittools/actions/gitversion/execute@v5.0.0
       id: build-gitversion
       with:
         configFilePath: GitVersion.yaml
@@ -60,10 +65,10 @@ jobs:
         echo "Version: ${{ steps.build-gitversion.outputs.SemVer }}"
         echo "Version: ${{ steps.build-gitversion.outputs.AssemblySemVer }}"
         echo "Version: ${{ steps.build-gitversion.outputs.AssemblySemFileVer }}"
-        echo "CommitsSinceVersionSource: ${{ steps.build-gitversion.outputs.CommitsSinceVersionSource }}"
+        echo "CommitsSinceVersionSource: ${{ steps.build-gitversion.outputs.VersionSourceDistance }}"
     #Build/pack the project
     - name: Setup .NET
-      uses: actions/setup-dotnet@v5
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 9.x
     - name: Display .NET version
@@ -88,7 +93,7 @@ jobs:
     #     dotnet tool run DotnetCtrfJsonReporter convert --trx-path TestResults/*.trx --output-directory TestResults/ --test-tool "xunit" --allow-roll-forward
     - name: Create .NET tests report
       id: release-tests-report
-      uses: dorny/test-reporter@v2
+      uses: dorny/test-reporter@v3
       if: steps.build-tests.outcome == 'success'
       with:
         name: .NET tests report
@@ -150,7 +155,7 @@ jobs:
       run: dotnet pack --no-build --nologo -p:Version='${{ steps.build-gitversion.outputs.AssemblySemVer }}' --configuration ${{ env.BUILD_CONFIGURATION }} ${{ inputs.project-file }}
     - name: Upload NuGet package artifacts
       id: build-upload
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       if: steps.build-pack.outcome == 'success'
       with:
         name: nugetPackage
@@ -163,7 +168,7 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
     - name: Download Nuget package artifacts
-      uses: actions/download-artifact@v6
+      uses: actions/download-artifact@v8
       with:
         name: nugetPackage
         path: artifacts/
